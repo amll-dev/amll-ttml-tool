@@ -172,7 +172,7 @@ window.addEventListener("keydown", (evt) => {
 	const code = removeSideOfKeyCode(evt.code);
 
 	// 阻止空格滚动
-	if (evt.code === "Space" && evt.target === document.body) {
+	if ((evt.code === "Space" || evt.code === "Home" || evt.code === "End") && evt.target === document.body) {
 		evt.preventDefault();
 		evt.stopPropagation();
 	}

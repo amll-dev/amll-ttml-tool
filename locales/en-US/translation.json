@@ -272,6 +272,8 @@
 			"syncStart": "Timing - Mark begin",
 			"syncNext": "Timing - Commit",
 			"syncEnd": "Timing - Mark end",
+			"moveFirstWordAndPlay": "Timing - Move to first word and play",
+			"moveLastWordAndPlay": "Timing - Move to last word and play",
 			"playPause": "Playback - Play/Pause",
 			"seekForward": "Playback - Seek forward 5s",
 			"seekBackward": "Playback - Seek backward 5s",

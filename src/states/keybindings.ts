@@ -28,6 +28,8 @@ import {
 	cmdSwitchEditMode,
 	cmdSwitchPreviewMode,
 	cmdSwitchSyncMode,
+    cmdMoveLastWordAndPlay,
+	cmdMoveFirstWordAndPlay,
 	cmdSyncEnd,
 	cmdSyncNext,
 	cmdSyncStart,
@@ -72,6 +74,9 @@ export const keyMoveNextWordAndPlayAtom = cmdMoveNextWordAndPlay.atom;
 export const keySyncStartAtom = cmdSyncStart.atom;
 export const keySyncNextAtom = cmdSyncNext.atom;
 export const keySyncEndAtom = cmdSyncEnd.atom;
+
+export const keyMoveFirstWordAndPlayAtom = cmdMoveFirstWordAndPlay.atom;
+export const keyMoveLastWordAndPlayAtom = cmdMoveLastWordAndPlay.atom;
 
 export const keyPlayPauseAtom = cmdPlayPause.atom;
 export const keySeekForwardAtom = cmdSeekForward.atom;

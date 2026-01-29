@@ -272,6 +272,8 @@
 			"syncStart": "打轴 - 初始打轴",
 			"syncNext": "打轴 - 步进打轴",
 			"syncEnd": "打轴 - 间奏打轴",
+			"moveFirstWordAndPlay": "打轴 - 移动到行第一个单词并播放",
+			"moveLastWordAndPlay": "打轴 - 移动到行最后一个单词并播放",
 			"playPause": "播放 - 暂停/继续播放",
 			"seekForward": "播放 - 快进 5 秒",
 			"seekBackward": "播放 - 快退 5 秒",

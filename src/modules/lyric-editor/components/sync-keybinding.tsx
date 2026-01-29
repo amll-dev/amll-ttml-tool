@@ -27,6 +27,8 @@ import {
 	keyMovePrevLineAtom,
 	keyMovePrevWordAndPlayAtom,
 	keyMovePrevWordAtom,
+    keyMoveLastWordAndPlayAtom,
+	keyMoveFirstWordAndPlayAtom,
 	keySyncEndAtom,
 	keySyncNextAtom,
 	keySyncStartAtom,
@@ -192,6 +194,34 @@ export const SyncKeyBinding: FC = () => {
 	useKeyBindingAtom(keyMoveNextWordAndPlayAtom, moveToNextWordAndPlay, [store]);
 	useKeyBindingAtom(keyMovePrevWordAtom, moveToPrevWord, [store]);
 	useKeyBindingAtom(keyMovePrevWordAndPlayAtom, moveToPrevWordAndPlay, [store]);
+
+	useKeyBindingAtom(keyMoveLastWordAndPlayAtom, () => {
+		const location = getCurrentLineLocation(store);
+		if (!location) return;
+
+		const lastWord = location.line.words
+			.slice()
+			.reverse()
+			.find(isSynchronizableWord);
+
+		if (!lastWord) return;
+
+		store.set(selectedWordsAtom, new Set([lastWord.id]));
+		store.set(selectedLinesAtom, new Set([location.line.id]));
+		audioEngine.seekMusic(lastWord.startTime / 1000);
+	}, [store]);
+
+	useKeyBindingAtom(keyMoveFirstWordAndPlayAtom, () => {
+		const location = getCurrentLineLocation(store);
+		if (!location) return;
+
+		const firstWord = location.line.words.find(isSynchronizableWord);
+		if (!firstWord) return;
+
+		store.set(selectedWordsAtom, new Set([firstWord.id]));
+		store.set(selectedLinesAtom, new Set([location.line.id]));
+		audioEngine.seekMusic(firstWord.startTime / 1000);
+	}, [store]);
 
 	// 记录时间戳（主要打轴按键）
 
