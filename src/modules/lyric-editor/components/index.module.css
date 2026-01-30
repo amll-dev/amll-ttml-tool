@@ -298,3 +298,17 @@
 	opacity: 1;
 	transform: translateY(-50%) rotate(-135deg) scaleX(1);
 }
+
+.lyricLinesWrapper {
+	position: relative;
+	height: 100%;
+	max-height: 100%;
+}
+
+.locateButton {
+	position: absolute;
+	right: var(--space-7);
+	bottom: var(--space-3);
+	z-index: 5;
+	box-shadow: var(--base-card-surface-box-shadow);
+}
