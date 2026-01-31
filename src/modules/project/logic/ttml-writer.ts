@@ -61,6 +61,15 @@ export default function exportTTMLText(
 		return span;
 	}
 
+	function normalizeVocalValue(vocal?: string | string[] | null): string {
+		if (!vocal) return "";
+		const parts = Array.isArray(vocal) ? vocal : vocal.split(/[\s,]+/);
+		return parts
+			.map((v) => v.trim())
+			.filter(Boolean)
+			.join(",");
+	}
+
 	const ttRoot = doc.createElement("tt");
 
 	ttRoot.setAttribute("xmlns", "http://www.w3.org/ns/ttml");
@@ -113,6 +122,20 @@ export default function exportTTMLText(
 		otherPersonAgent.setAttribute("xml:id", "v2");
 
 		metadataEl.appendChild(otherPersonAgent);
+	}
+
+	const vocalTags = ttmlLyric.vocalTags?.filter(
+		(tag) => tag.key && tag.key.trim().length > 0,
+	) ?? [];
+	if (vocalTags.length > 0) {
+		const vocalsEl = doc.createElement("amll:vocals");
+		for (const tag of vocalTags) {
+			const vocalEl = doc.createElement("vocal");
+			vocalEl.setAttribute("key", tag.key);
+			vocalEl.setAttribute("value", tag.value ?? "");
+			vocalsEl.appendChild(vocalEl);
+		}
+		metadataEl.appendChild(vocalsEl);
 	}
 
 	// Extract songwriter metadata to emit in iTunes format (Spicylyrics compatibility)
@@ -184,6 +207,10 @@ export default function exportTTMLText(
 			lineP.setAttribute("end", msToTimestamp(endTime));
 
 			lineP.setAttribute("ttm:agent", line.isDuet ? "v2" : "v1");
+			const normalizedVocal = normalizeVocalValue(line.vocal);
+			if (normalizedVocal.length > 0) {
+				lineP.setAttribute("amll:vocal", normalizedVocal);
+			}
 
 			const itunesKey = `L${++i}`;
 			lineP.setAttribute("itunes:key", itunesKey);
@@ -263,6 +290,11 @@ export default function exportTTMLText(
 					bgLineSpan.appendChild(doc.createTextNode(`(${word.word})`));
 					bgLineSpan.setAttribute("begin", msToTimestamp(word.startTime));
 					bgLineSpan.setAttribute("end", msToTimestamp(word.endTime));
+				}
+
+				const normalizedBgVocal = normalizeVocalValue(bgLine.vocal);
+				if (normalizedBgVocal.length > 0) {
+					bgLineSpan.setAttribute("amll:vocal", normalizedBgVocal);
 				}
 
 				if (bgLine.translatedLyric) {

@@ -6,6 +6,7 @@ import { DistributeRomanizationDialog } from "$/modules/project/modals/Distribut
 import { HistoryRestoreDialog } from "$/modules/project/modals/HistoryRestore.tsx";
 import { ImportFromText } from "$/modules/project/modals/ImportFromText.tsx";
 import { MetadataEditor } from "$/modules/project/modals/MetadataEditor.tsx";
+import { VocalTagsEditor } from "$/modules/project/modals/VocalTagsEditor.tsx";
 import { SubmitToAMLLDBDialog } from "$/modules/project/modals/SubmitToAmll.tsx";
 import { AdvancedSegmentationDialog } from "$/modules/segmentation/components/AdvancedSegmentation.tsx";
 import { SplitWordDialog } from "$/modules/segmentation/components/split-word.tsx";
@@ -18,6 +19,7 @@ export const Dialogs = () => {
 			<ImportFromText />
 			<ImportFromLRCLIB />
 			<MetadataEditor />
+			<VocalTagsEditor />
 			<SettingsDialog />
 			<SplitWordDialog />
 			<ReplaceWordDialog />

@@ -1,0 +1,67 @@
+.dialogContent {
+	max-width: 760px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	overflow: hidden;
+}
+
+.dialogHeader {
+	padding: 20px 20px 10px 20px;
+	flex-shrink: 0;
+}
+
+.dialogBody {
+	flex: 1;
+	overflow-y: auto;
+	padding: 0 20px 20px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.sectionHeader {
+	margin-bottom: 8px;
+}
+
+.tagList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.tagControl {
+	min-width: 180px;
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.table th,
+.table td {
+	padding: 6px 4px;
+	vertical-align: top;
+}
+
+.lineIndexColumn {
+	width: 60px;
+}
+
+.lineText {
+	white-space: normal;
+}
+
+.vocalButtonGroup {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding-left: 25px;
+}
+
+.vocalButton {
+	min-width: 40px;
+}

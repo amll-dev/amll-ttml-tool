@@ -26,6 +26,47 @@ import {
 import { isDarkThemeAtom, lyricLinesAtom } from "$/states/main.ts";
 import styles from "./index.module.css";
 
+const parseLineVocalIds = (value?: string | string[]) => {
+	if (!value) return [];
+	const parts = Array.isArray(value) ? value : value.split(/[\s,]+/);
+	return parts.map((v) => v.trim()).filter(Boolean);
+};
+
+const mapVocalTagsForPreview = (
+	vocal: string | string[] | undefined,
+	vocalTagMap: Map<string, string>,
+) => {
+	if (!vocal) return;
+	const fallbackParts = Array.isArray(vocal) ? vocal : [vocal];
+	const normalizedFallback = fallbackParts
+		.map((v) => v.trim())
+		.filter(Boolean);
+	if (vocalTagMap.size === 0) {
+		return normalizedFallback.length > 0 ? normalizedFallback : undefined;
+	}
+	const ids = parseLineVocalIds(vocal);
+	if (ids.length === 0) return;
+	let hasMatch = false;
+	const mapped = ids
+		.map((id) => {
+			const value = vocalTagMap.get(id);
+			if (value && value.trim().length > 0) {
+				hasMatch = true;
+				return value;
+			}
+			if (vocalTagMap.has(id)) {
+				hasMatch = true;
+			}
+			return id;
+		})
+		.map((v) => v.trim())
+		.filter(Boolean);
+	if (!hasMatch) {
+		return normalizedFallback.length > 0 ? normalizedFallback : undefined;
+	}
+	return mapped.length > 0 ? mapped : undefined;
+};
+
 export const AMLLWrapper = memo(() => {
 	const originalLyricLines = useAtomValue(lyricLinesAtom);
 	const currentTime = useAtomValue(currentTimeAtom);
@@ -38,11 +79,15 @@ export const AMLLWrapper = memo(() => {
 	const playerRef = useRef<LyricPlayerRef>(null);
 
 	const lyricLines = useMemo(() => {
+		const vocalTagMap = new Map(
+			(originalLyricLines.vocalTags ?? []).map((tag) => [tag.key, tag.value]),
+		);
 		return structuredClone(
 			originalLyricLines.lyricLines.map((line) => ({
 				...line,
 				translatedLyric: showTranslationLines ? line.translatedLyric : "",
 				romanLyric: showRomanLines ? line.romanLyric : "",
+				vocal: mapVocalTagsForPreview(line.vocal, vocalTagMap),
 			})),
 		);
 	}, [originalLyricLines, showTranslationLines, showRomanLines]);
@@ -80,3 +125,4 @@ export const AMLLWrapper = memo(() => {
 });
 
 export default AMLLWrapper;
+

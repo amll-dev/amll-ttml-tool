@@ -40,6 +40,7 @@ export const autoDarkModeAtom = atom(true);
 export const lyricLinesAtom = atom({
 	lyricLines: [],
 	metadata: [],
+	vocalTags: [],
 } as TTMLLyric);
 
 /**
@@ -108,6 +109,7 @@ export const newLyricLinesAtom = atom(
 		newState: TTMLLyric = {
 			lyricLines: [],
 			metadata: [],
+			vocalTags: [],
 		},
 	) => {
 		set(lyricLinesAtom, newState);

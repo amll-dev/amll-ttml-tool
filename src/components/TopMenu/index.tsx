@@ -21,6 +21,7 @@ import {
 	historyRestoreDialogAtom,
 	latencyTestDialogAtom,
 	metadataEditorDialogAtom,
+	vocalTagsEditorDialogAtom,
 	settingsDialogAtom,
 	submitToAMLLDBDialogAtom,
 	timeShiftDialogAtom,
@@ -80,6 +81,7 @@ export const TopMenu: FC = () => {
 	const newLyricLine = useSetAtom(newLyricLinesAtom);
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 	const setMetadataEditorOpened = useSetAtom(metadataEditorDialogAtom);
+	const setVocalTagsEditorOpened = useSetAtom(vocalTagsEditorDialogAtom);
 	const setSettingsDialogOpened = useSetAtom(settingsDialogAtom);
 	const undoLyricLines = useAtomValue(undoableLyricLinesAtom);
 	const store = useStore();
@@ -192,6 +194,10 @@ export const TopMenu: FC = () => {
 	const onOpenMetadataEditor = useCallback(() => {
 		setMetadataEditorOpened(true);
 	}, [setMetadataEditorOpened]);
+
+	const onOpenVocalTagsEditor = useCallback(() => {
+		setVocalTagsEditorOpened(true);
+	}, [setVocalTagsEditorOpened]);
 
 	const onOpenSettings = useCallback(() => {
 		setSettingsDialogOpened(true);
@@ -534,6 +540,11 @@ export const TopMenu: FC = () => {
 										编辑歌词元数据
 									</Trans>
 								</DropdownMenu.Item>
+								<DropdownMenu.Item onSelect={onOpenVocalTagsEditor}>
+									<Trans i18nKey="topBar.menu.editVocalTags">
+										编辑演唱者标签
+									</Trans>
+								</DropdownMenu.Item>
 								<DropdownMenu.Separator />
 								<DropdownMenu.Item onSelect={onOpenSettings}>
 									<Trans i18nKey="settingsDialog.title">首选项</Trans>
@@ -736,6 +747,9 @@ export const TopMenu: FC = () => {
 							<DropdownMenu.Separator />
 							<DropdownMenu.Item onSelect={onOpenMetadataEditor}>
 								<Trans i18nKey="topBar.menu.editMetadata">编辑歌词元数据</Trans>
+							</DropdownMenu.Item>
+							<DropdownMenu.Item onSelect={onOpenVocalTagsEditor}>
+								<Trans i18nKey="topBar.menu.editVocalTags">编辑演唱者标签</Trans>
 							</DropdownMenu.Item>
 							<DropdownMenu.Separator />
 							<DropdownMenu.Item onSelect={onOpenSettings}>

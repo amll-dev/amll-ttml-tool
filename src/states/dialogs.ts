@@ -2,6 +2,7 @@ import { atom } from "jotai";
 
 export const importFromTextDialogAtom = atom(false);
 export const metadataEditorDialogAtom = atom(false);
+export const vocalTagsEditorDialogAtom = atom(false);
 export const settingsDialogAtom = atom(false);
 export const settingsTabAtom = atom("common");
 export const latencyTestDialogAtom = atom(false);

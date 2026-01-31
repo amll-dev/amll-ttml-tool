@@ -158,6 +158,18 @@
 	}
 }
 
+.vocalTagsRow {
+	margin-top: var(--space-1);
+}
+
+.vocalTagsButtons {
+	gap: var(--space-1);
+}
+
+.vocalTagButton {
+	min-width: 32px;
+}
+
 .lyricWordsContainer {
 	min-width: 0;
 	flex-grow: 1;
