@@ -102,6 +102,7 @@ const LyricWordViewEditSpan = ({
 	const selectedWords = useAtomValue(selectedWordsAtom);
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const toolMode = useAtomValue(toolModeAtom);
+	const blockDragRef = useRef(false);
 
 	function onWordSelect(evt: MouseEvent<HTMLSpanElement>) {
 		if (evt.ctrlKey || evt.metaKey) {
@@ -167,7 +168,20 @@ const LyricWordViewEditSpan = ({
 			<ContextMenu.Trigger>
 				<span
 					draggable={toolMode === ToolMode.Edit}
+					onPointerDown={(evt) => {
+						blockDragRef.current =
+							(evt.target as HTMLElement | null)?.tagName === "INPUT";
+					}}
+					onPointerUp={() => {
+						blockDragRef.current = false;
+					}}
 					onDragStart={(evt) => {
+						if (blockDragRef.current) {
+							blockDragRef.current = false;
+							evt.preventDefault();
+							evt.stopPropagation();
+							return;
+						}
 						if (!isWordSelected) onWordSelect(evt);
 						evt.dataTransfer.effectAllowed = "copyMove";
 						evt.dataTransfer.dropEffect = "move";
@@ -176,6 +190,7 @@ const LyricWordViewEditSpan = ({
 					}}
 					onDragEnd={() => {
 						store.set(isDraggingAtom, false);
+						blockDragRef.current = false;
 					}}
 					onDragOver={(evt) => {
 						if (!store.get(isDraggingAtom)) return;
@@ -236,7 +251,9 @@ const LyricWordViewEditSpan = ({
 								}));
 								setSelectedWords((v) => {
 									v.clear();
-									collectedWords.forEach((w) => v.add(w.id));
+									for (const w of collectedWords) {
+										v.add(w.id);
+									}
 								});
 							}
 							const insertPosition = targetIndex + (insertRight ? 1 : 0);
@@ -254,6 +271,12 @@ const LyricWordViewEditSpan = ({
 					className={className}
 					onDoubleClick={onDoubleClick}
 					onClick={(evt) => {
+						console.log("[LyricWord] click", {
+							button: evt.button,
+							target: (evt.target as HTMLElement | null)?.tagName,
+							toolMode,
+							isWordSelected,
+						});
 						evt.stopPropagation();
 						evt.preventDefault();
 						onWordSelect(evt);
