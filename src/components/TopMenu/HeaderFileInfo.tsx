@@ -1,33 +1,25 @@
-import {
-	CloudCheckmarkRegular,
-	CloudSyncRegular,
-	HistoryRegular,
-} from "@fluentui/react-icons";
+import { HistoryRegular } from "@fluentui/react-icons";
 import { Box, Button, Flex, Text, TextField } from "@radix-ui/themes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { confirmDialogAtom, historyRestoreDialogAtom } from "$/states/dialogs";
-import {
-	lastSavedTimeAtom,
-	SaveStatus,
-	lyricLinesAtom,
-	saveFileNameAtom,
-	saveStatusAtom,
-} from "$/states/main";
+import { lastSavedTimeAtom, lyricLinesAtom, saveFileNameAtom } from "$/states/main";
 import { getSuggestedTtmlFileName } from "$/modules/project/logic/metadata-filename";
 
 export const HeaderFileInfo = () => {
 	const { t } = useTranslation();
 	const [filename, setFilename] = useAtom(saveFileNameAtom);
-	const saveStatus = useAtomValue(saveStatusAtom);
 	const lastSavedTime = useAtomValue(lastSavedTimeAtom);
 	const setHistoryDialogOpen = useSetAtom(historyRestoreDialogAtom);
 	const setConfirmDialog = useSetAtom(confirmDialogAtom);
 	const metadata = useAtomValue(lyricLinesAtom).metadata;
 	const [isEditing, setIsEditing] = useState(false);
 	const [draftName, setDraftName] = useState("");
+	const [autoSaveExpanded, setAutoSaveExpanded] = useState(false);
+	const [autoSaveTimeLabel, setAutoSaveTimeLabel] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
+	const lastSavedTimeRef = useRef<number | null>(null);
 	const suffix = ".ttml";
 	const suggestedFile = getSuggestedTtmlFileName(metadata);
 
@@ -38,40 +30,6 @@ export const HeaderFileInfo = () => {
 				: value,
 		[suffix],
 	);
-
-	const getStatusDisplay = () => {
-		switch (saveStatus) {
-			case SaveStatus.Saving:
-				return {
-					text: t("header.status.saving", "正在保存..."),
-					icon: <CloudSyncRegular />,
-					color: "var(--accent-9)",
-				};
-			case SaveStatus.Pending:
-				return {
-					text: t("header.status.pending", "正在保存..."),
-					icon: <CloudSyncRegular />,
-					color: "var(--gray-10)",
-				};
-			default:
-				if (lastSavedTime) {
-					return {
-						text: `${t("header.status.savedAt", "已保存")} ${new Date(
-							lastSavedTime,
-						).toLocaleTimeString()}`,
-						icon: <CloudCheckmarkRegular />,
-						color: "var(--gray-10)",
-					};
-				}
-				return {
-					text: t("header.status.saved", "已保存"),
-					icon: <CloudCheckmarkRegular />,
-					color: "var(--gray-10)",
-				};
-		}
-	};
-
-	const status = getStatusDisplay();
 
 	const finishEditing = useCallback(
 		({ commit }: { commit: boolean }) => {
@@ -94,6 +52,18 @@ export const HeaderFileInfo = () => {
 		inputRef.current?.focus();
 		inputRef.current?.select();
 	}, [filename, getBaseName, isEditing]);
+
+	useEffect(() => {
+		if (!lastSavedTime) return;
+		if (lastSavedTimeRef.current === lastSavedTime) return;
+		lastSavedTimeRef.current = lastSavedTime;
+		setAutoSaveTimeLabel(new Date(lastSavedTime).toLocaleTimeString());
+		setAutoSaveExpanded(true);
+		const timer = window.setTimeout(() => {
+			setAutoSaveExpanded(false);
+		}, 4000);
+		return () => window.clearTimeout(timer);
+	}, [lastSavedTime]);
 
 	const handleNameClick = useCallback(() => {
 		const isDefaultName = filename.toLowerCase() === "lyric.ttml";
@@ -120,10 +90,26 @@ export const HeaderFileInfo = () => {
 			<Button
 				variant="soft"
 				onClick={() => setHistoryDialogOpen(true)}
-				style={{ justifyContent: "start" }}
+				style={{
+					justifyContent: "start",
+					overflow: "hidden",
+					whiteSpace: "nowrap",
+					maxWidth: autoSaveExpanded ? 220 : 36,
+					transition: "max-width 0.3s ease",
+				}}
 			>
-				<HistoryRegular />
-				{t("header.popover.versionHistory", "版本历史记录...")}
+				<Flex align="center" gap="1">
+					<Text size="1" style={{ display: "flex" }}>
+						<HistoryRegular />
+					</Text>
+					{autoSaveExpanded && (
+						<Text size="1" color="gray">
+							{t("header.status.autoSavedAt", "已自动保存于 {time}", {
+								time: autoSaveTimeLabel,
+							})}
+						</Text>
+					)}
+				</Flex>
 			</Button>
 
 			<Box>
@@ -181,32 +167,6 @@ export const HeaderFileInfo = () => {
 									{getBaseName(filename)}
 								</Text>
 								<Text size="2">{suffix}</Text>
-							</Flex>
-
-							<Box
-								style={{
-									width: 4,
-									height: 4,
-									borderRadius: "50%",
-									backgroundColor: "var(--gray-8)",
-									flexShrink: 0,
-								}}
-							/>
-
-							<Flex
-								align="center"
-								gap="1"
-								style={{
-									color: status.color,
-									opacity: 0.8,
-									transition: "color 0.2s",
-									flexShrink: 0,
-								}}
-							>
-								<Text size="1" style={{ display: "flex" }}>
-									{status.icon}
-								</Text>
-								<Text size="1">{status.text}</Text>
 							</Flex>
 						</Flex>
 					</Button>
