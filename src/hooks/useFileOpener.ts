@@ -138,7 +138,9 @@ export const useFileOpener = () => {
 				setProjectId(resolvedProjectId);
 				setNewLyricLines(lyricData);
 				const suggestedFile = getSuggestedTtmlFileName(lyricData.metadata);
-				setSaveFileName(suggestedFile?.fileName ?? file.name);
+				const nextFileName =
+					ext === "ttml" ? file.name : (suggestedFile?.fileName ?? file.name);
+				setSaveFileName(nextFileName);
 			} catch (e) {
 				logError(`Failed to open file: ${file.name}`, e);
 				toast.error(t("error.openFileFailed", "打开文件失败"));
