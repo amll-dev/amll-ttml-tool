@@ -48,9 +48,10 @@ import {
 	customBackgroundBlurAtom,
 	customBackgroundBrightnessAtom,
 	customBackgroundImageAtom,
+	customBackgroundImageInitAtom,
 	customBackgroundMaskAtom,
 	customBackgroundOpacityAtom,
-} from "./modules/settings/states";
+} from "./modules/settings/modals/customBackground";
 import { showTouchSyncPanelAtom } from "./modules/settings/states/sync.ts";
 import { settingsDialogAtom, settingsTabAtom } from "./states/dialogs.ts";
 import {
@@ -142,8 +143,13 @@ function App() {
 	const hasNotifiedRef = useRef(false);
 	const setSettingsOpen = useSetAtom(settingsDialogAtom);
 	const setSettingsTab = useSetAtom(settingsTabAtom);
+	const initCustomBackgroundImage = useSetAtom(customBackgroundImageInitAtom);
 	const { t } = useTranslation();
 	const store = useStore();
+
+	useEffect(() => {
+		initCustomBackgroundImage();
+	}, [initCustomBackgroundImage]);
 
 	useEffect(() => {
 		if (import.meta.env.TAURI_ENV_PLATFORM) {
