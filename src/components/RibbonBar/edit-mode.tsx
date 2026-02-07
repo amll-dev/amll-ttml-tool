@@ -41,6 +41,7 @@ import {
 } from "$/modules/settings/states";
 import {
 	editingTimeFieldAtom,
+	bgLyricIgnoreSyncAtom,
 	lyricLinesAtom,
 	requestFocusAtom,
 	selectedLinesAtom,
@@ -360,6 +361,93 @@ function CheckboxField<
 	);
 }
 
+const BgLyricField: FC<{
+	label: string;
+	defaultValue: boolean;
+	isLocked: boolean;
+	onToggleLock: () => void;
+}> = ({ label, defaultValue, isLocked, onToggleLock }) => {
+	const itemAtom = useMemo(() => selectedLinesAtom, []);
+	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
+	const store = useStore();
+	const currentValueAtom = useMemo(
+		() =>
+			atom((get) => {
+				const selectedItems = get(itemAtom);
+				const lyricLines = get(lyricLinesAtom);
+				if (selectedItems.size === 0) return undefined;
+				const values = new Set();
+				for (const line of lyricLines.lyricLines) {
+					if (selectedItems.has(line.id)) {
+						values.add(line.isBG);
+					}
+				}
+				if (values.size === 1) return values.values().next().value as boolean;
+				return MULTIPLE_VALUES;
+			}),
+		[itemAtom],
+	);
+	const currentValue = useAtomValue(currentValueAtom);
+	const isDisabledAtom = useMemo(
+		() => atom((get) => get(itemAtom).size === 0),
+		[itemAtom],
+	);
+	const isDisabled = useAtomValue(isDisabledAtom) || isLocked;
+	const checkboxId = useId();
+
+	const onCheckedChange = useCallback(
+		(value: boolean | "indeterminate") => {
+			if (value === "indeterminate") return;
+			editLyricLines((state) => {
+				const selectedItems = store.get(itemAtom);
+				for (const line of state.lyricLines) {
+					if (selectedItems.has(line.id)) {
+						line.isBG = value;
+					}
+				}
+				return state;
+			});
+		},
+		[editLyricLines, itemAtom, store],
+	);
+
+		return (
+			<>
+				<Text
+					wrap="nowrap"
+					size="1"
+					color={isLocked ? "gray" : undefined}
+					role="button"
+					tabIndex={0}
+					aria-pressed={isLocked}
+					onClick={onToggleLock}
+					onKeyDown={(evt) => {
+						if (evt.key === "Enter" || evt.key === " ") {
+							evt.preventDefault();
+							onToggleLock();
+						}
+					}}
+					style={{ cursor: "pointer", userSelect: "none" }}
+				>
+					{label}
+				</Text>
+			<Checkbox
+				disabled={isDisabled}
+				id={checkboxId}
+				aria-label={label}
+				checked={
+					currentValue
+						? currentValue === MULTIPLE_VALUES
+							? "indeterminate"
+							: (currentValue as boolean)
+						: defaultValue
+				}
+				onCheckedChange={onCheckedChange}
+			/>
+		</>
+	);
+};
+
 function EditModeField({
 	simpleModeLabel = "简单模式",
 	advanceModeLabel = "高级模式",
@@ -545,8 +633,25 @@ const AuxiliaryDisplayField: FC = () => {
 
 export const EditModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 	(_props, ref) => {
-		const editLyricLines = useSetAtom(lyricLinesAtom);
+		const editLyricLines = useSetImmerAtom(lyricLinesAtom);
+		const [bgLyricIgnoreSync, setBgLyricIgnoreSync] = useAtom(
+			bgLyricIgnoreSyncAtom,
+		);
 		const { t } = useTranslation();
+		const toggleBgLyricIgnoreSync = useCallback(() => {
+			setBgLyricIgnoreSync((prev) => {
+				const next = !prev;
+				editLyricLines((state) => {
+					for (const line of state.lyricLines) {
+						if (line.isBG) {
+							line.ignoreSync = next;
+						}
+					}
+					return state;
+				});
+				return next;
+			});
+		}, [editLyricLines, setBgLyricIgnoreSync]);
 
 		return (
 			<RibbonFrame ref={ref}>
@@ -556,11 +661,8 @@ export const EditModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 							size="1"
 							variant="soft"
 							onClick={() =>
-								editLyricLines((prev) => {
-									return {
-										...prev,
-										lyricLines: [...prev.lyricLines, newLyricLine()],
-									};
+								editLyricLines((draft) => {
+									draft.lyricLines.push(newLyricLine());
 								})
 							}
 						>
@@ -586,11 +688,11 @@ export const EditModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 				</RibbonSection>
 				<RibbonSection label={t("ribbonBar.editMode.lineProperties", "行属性")}>
 					<Grid columns="0fr 0fr" gap="4" gapY="1" flexGrow="1" align="center">
-						<CheckboxField
+						<BgLyricField
 							label={t("ribbonBar.editMode.bgLyric", "背景歌词")}
-							isWordField={false}
-							fieldName="isBG"
 							defaultValue={false}
+							isLocked={bgLyricIgnoreSync}
+							onToggleLock={toggleBgLyricIgnoreSync}
 						/>
 						<CheckboxField
 							label={t("ribbonBar.editMode.duetLyric", "对唱歌词")}
