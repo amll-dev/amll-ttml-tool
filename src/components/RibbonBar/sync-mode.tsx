@@ -28,6 +28,7 @@ import {
 	keySyncNextAtom,
 	keySyncStartAtom,
 } from "$/states/keybindings.ts";
+import { bgLyricIgnoreSyncAtom, lyricLinesAtom } from "$/states/main.ts";
 import {
 	Checkbox,
 	Flex,
@@ -37,6 +38,7 @@ import {
 	TextField,
 } from "@radix-ui/themes";
 import { useAtom, useAtomValue } from "jotai";
+import { useSetImmerAtom } from "jotai-immer";
 import { type FC, forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyBinding } from "../KeyBinding/index.tsx";
@@ -84,6 +86,10 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 		const [displayRomanizationInSync, setdisplayRomanizationInSync] = useAtom(
 			displayRomanizationInSyncAtom,
 		);
+		const [bgLyricIgnoreSync, setBgLyricIgnoreSync] = useAtom(
+			bgLyricIgnoreSyncAtom,
+		);
+		const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 		const showWordRomanizationInput = useAtomValue(
 			showWordRomanizationInputAtom,
 		);
@@ -139,6 +145,27 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 						<Checkbox
 							checked={showTouchSyncPanel}
 							onCheckedChange={(v) => setShowTouchSyncPanel(!!v)}
+						/>
+						<Text wrap="nowrap" size="1">
+							{t(
+								"ribbonBar.syncMode.bgLyricIgnoreSync",
+								"背景歌词忽略打轴",
+							)}
+						</Text>
+						<Checkbox
+							checked={bgLyricIgnoreSync}
+							onCheckedChange={(v) => {
+								const next = !!v;
+								setBgLyricIgnoreSync(next);
+								editLyricLines((state) => {
+									for (const line of state.lyricLines) {
+										if (line.isBG) {
+											line.ignoreSync = next;
+										}
+									}
+									return state;
+								});
+							}}
 						/>
 					</Grid>
 				</RibbonSection>
