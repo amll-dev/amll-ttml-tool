@@ -1,16 +1,14 @@
-import { HomeRegular } from "@fluentui/react-icons";
-import { Box, Button, DropdownMenu, Flex, IconButton } from "@radix-ui/themes";
+import { Box, Flex } from "@radix-ui/themes";
 import { open } from "@tauri-apps/plugin-shell";
 import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import { useSetImmerAtom, withImmer } from "jotai-immer";
 import { Toolbar } from "radix-ui";
 import { type FC, useCallback, useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import saveFile from "save-file";
 import { uid } from "uid";
 import { useFileOpener } from "$/hooks/useFileOpener.ts";
 import exportTTMLText from "$/modules/project/logic/ttml-writer";
-import { ImportExportLyric } from "$/modules/project/modals/ImportExportLyric";
 import { applyRomanizationWarnings } from "$/modules/segmentation/utils/Transliteration/roman-warning";
 import { segmentLyricLines } from "$/modules/segmentation/utils/segmentation";
 import { useSegmentationConfig } from "$/modules/segmentation/utils/useSegmentationConfig";
@@ -48,9 +46,14 @@ import {
 	undoableLyricLinesAtom,
 	undoLyricLinesAtom,
 } from "$/states/main.ts";
-import { formatKeyBindings, useKeyBindingAtom } from "$/utils/keybindings.ts";
+import { useKeyBindingAtom } from "$/utils/keybindings.ts";
 import { error, log } from "$/utils/logging.ts";
 import { HeaderFileInfo } from "./HeaderFileInfo";
+import { EditMenu } from "./modals/EditMenu";
+import { FileMenu } from "./modals/FileMenu";
+import { HelpMenu } from "./modals/HelpMenu";
+import { HomeMenu } from "./modals/HomeMenu";
+import { ToolMenu } from "./modals/ToolMenu";
 
 const useWindowSize = () => {
 	const [windowSize, setWindowSize] = useState({
@@ -407,418 +410,113 @@ export const TopMenu: FC = () => {
 			}}
 		>
 			{showHomeButton ? (
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger>
-						<IconButton variant="soft">
-							<HomeRegular />
-						</IconButton>
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content>
-						<DropdownMenu.Sub>
-							<DropdownMenu.SubTrigger>
-								<Trans i18nKey="topBar.menu.file">文件</Trans>
-							</DropdownMenu.SubTrigger>
-							<DropdownMenu.SubContent>
-								<DropdownMenu.Item
-									onSelect={onNewFile}
-									shortcut={formatKeyBindings(newFileKey)}
-								>
-									<Trans i18nKey="topBar.menu.newLyric">新建 TTML 文件</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									onSelect={onOpenFile}
-									shortcut={formatKeyBindings(openFileKey)}
-								>
-									<Trans i18nKey="topBar.menu.openLyric">打开 TTML 文件</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item onSelect={onOpenFileFromClipboard}>
-									<Trans i18nKey="topBar.menu.openFromClipboard">
-										从剪切板打开 TTML 文件
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									onSelect={onSaveFile}
-									shortcut={formatKeyBindings(saveFileKey)}
-								>
-									<Trans i18nKey="topBar.menu.saveLyric">保存 TTML 文件</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item
-									onSelect={() => setHistoryRestoreDialog(true)}
-								>
-									{t("topBar.menu.restoreFromHistory", "从历史记录恢复...")}
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item onSelect={onSaveFileToClipboard}>
-									<Trans i18nKey="topBar.menu.saveLyricToClipboard">
-										保存 TTML 文件到剪切板
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<ImportExportLyric />
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item onSelect={onSubmitToAMLLDB}>
-									<Trans i18nKey="topBar.menu.uploadToAMLLDB">
-										上传到 AMLL 歌词数据库
-									</Trans>
-								</DropdownMenu.Item>
-							</DropdownMenu.SubContent>
-						</DropdownMenu.Sub>
-
-						<DropdownMenu.Sub>
-							<DropdownMenu.SubTrigger>
-								<Trans i18nKey="topBar.menu.edit">编辑</Trans>
-							</DropdownMenu.SubTrigger>
-							<DropdownMenu.SubContent>
-								<DropdownMenu.Item
-									onSelect={onUndo}
-									shortcut={formatKeyBindings(undoKey)}
-									disabled={!undoLyricLines.canUndo}
-								>
-									<Trans i18nKey="topBar.menu.undo">撤销</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									onSelect={onRedo}
-									shortcut={formatKeyBindings(redoKey)}
-									disabled={!undoLyricLines.canRedo}
-								>
-									<Trans i18nKey="topBar.menu.redo">重做</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item
-									onSelect={onSelectAll}
-									shortcut={formatKeyBindings(selectAllLinesKey)}
-								>
-									<Trans i18nKey="topBar.menu.selectAllLines">
-										选中所有歌词行
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									onSelect={onUnselectAll}
-									shortcut={formatKeyBindings(unselectAllLinesKey)}
-								>
-									<Trans i18nKey="topBar.menu.unselectAllLines">
-										取消选中所有歌词行
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									onSelect={onSelectInverted}
-									shortcut={formatKeyBindings(selectInvertedLinesKey)}
-								>
-									<Trans i18nKey="topBar.menu.invertSelectAllLines">
-										反选所有歌词行
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Item
-									onSelect={onSelectWordsOfMatchedSelection}
-									shortcut={formatKeyBindings(selectWordsOfMatchedSelectionKey)}
-								>
-									<Trans i18nKey="topBar.menu.selectWordsOfMatchedSelection">
-										选择单词匹配项
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item
-									onSelect={onDeleteSelection}
-									shortcut={formatKeyBindings(deleteSelectionKey)}
-								>
-									<Trans i18nKey="contextMenu.deleteWords">删除选定单词</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item onSelect={onOpenTimeShift}>
-									{t("topBar.menu.timeShift", "平移时间...")}
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item onSelect={onOpenMetadataEditor}>
-									<Trans i18nKey="topBar.menu.editMetadata">
-										编辑歌词元数据
-									</Trans>
-								</DropdownMenu.Item>
-								<DropdownMenu.Separator />
-								<DropdownMenu.Item onSelect={onOpenSettings}>
-									<Trans i18nKey="settingsDialog.title">首选项</Trans>
-								</DropdownMenu.Item>
-							</DropdownMenu.SubContent>
-						</DropdownMenu.Sub>
-
-						<DropdownMenu.Sub>
-							<DropdownMenu.SubTrigger>
-								<Trans i18nKey="topBar.menu.tool">工具</Trans>
-							</DropdownMenu.SubTrigger>
-
-							<DropdownMenu.SubContent>
-								<DropdownMenu.Sub>
-									<DropdownMenu.SubTrigger>
-										{t("topBar.menu.segmentationTools", "分词")}
-									</DropdownMenu.SubTrigger>
-									<DropdownMenu.SubContent>
-										<DropdownMenu.Item onSelect={onAutoSegment}>
-											{t("topBar.menu.autoSegment", "自动分词")}
-										</DropdownMenu.Item>
-										<DropdownMenu.Item
-											onSelect={() => setAdvancedSegmentationDialog(true)}
-										>
-											{t("topBar.menu.advancedSegment", "高级分词...")}
-										</DropdownMenu.Item>
-									</DropdownMenu.SubContent>
-								</DropdownMenu.Sub>
-
-								<DropdownMenu.Item onSelect={onSyncLineTimestamps}>
-									{t("topBar.menu.syncLineTimestamps", "同步行时间戳")}
-								</DropdownMenu.Item>
-
-								<DropdownMenu.Sub>
-									<DropdownMenu.SubTrigger>
-										{t("topBar.menu.perWordRomanization.index", "逐字音译")}
-									</DropdownMenu.SubTrigger>
-									<DropdownMenu.SubContent>
-										<DropdownMenu.Item onSelect={onOpenDistributeRomanization}>
-											{t("topBar.menu.perWordRomanization.distribute", "自动分配罗马音...")}
-										</DropdownMenu.Item>
-										<DropdownMenu.Item onSelect={onCheckRomanizationWarnings}>
-											{t("topBar.menu.perWordRomanization.check", "检查")}
-										</DropdownMenu.Item>
-									</DropdownMenu.SubContent>
-								</DropdownMenu.Sub>
-
-								<DropdownMenu.Item onSelect={onOpenLatencyTest}>
-									{t("settingsDialog.common.latencyTest", "音频/输入延迟测试")}
-								</DropdownMenu.Item>
-							</DropdownMenu.SubContent>
-						</DropdownMenu.Sub>
-
-						<DropdownMenu.Sub>
-							<DropdownMenu.SubTrigger>
-								<Trans i18nKey="topBar.menu.help">帮助</Trans>
-							</DropdownMenu.SubTrigger>
-							<DropdownMenu.SubContent>
-								<DropdownMenu.Item onSelect={onOpenGitHub}>
-									GitHub
-								</DropdownMenu.Item>
-								<DropdownMenu.Item onSelect={onOpenWiki}>
-									{t("topBar.menu.helpDoc", "使用说明")}
-								</DropdownMenu.Item>
-							</DropdownMenu.SubContent>
-						</DropdownMenu.Sub>
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
+				<HomeMenu
+					newFileKey={newFileKey}
+					openFileKey={openFileKey}
+					saveFileKey={saveFileKey}
+					undoKey={undoKey}
+					redoKey={redoKey}
+					selectAllLinesKey={selectAllLinesKey}
+					unselectAllLinesKey={unselectAllLinesKey}
+					selectInvertedLinesKey={selectInvertedLinesKey}
+					selectWordsOfMatchedSelectionKey={selectWordsOfMatchedSelectionKey}
+					deleteSelectionKey={deleteSelectionKey}
+					undoDisabled={!undoLyricLines.canUndo}
+					redoDisabled={!undoLyricLines.canRedo}
+					onNewFile={onNewFile}
+					onOpenFile={onOpenFile}
+					onOpenFileFromClipboard={onOpenFileFromClipboard}
+					onSaveFile={onSaveFile}
+					onOpenHistoryRestore={() => setHistoryRestoreDialog(true)}
+					onSaveFileToClipboard={onSaveFileToClipboard}
+					onSubmitToAMLLDB={onSubmitToAMLLDB}
+					onUndo={onUndo}
+					onRedo={onRedo}
+					onSelectAll={onSelectAll}
+					onUnselectAll={onUnselectAll}
+					onSelectInverted={onSelectInverted}
+					onSelectWordsOfMatchedSelection={onSelectWordsOfMatchedSelection}
+					onDeleteSelection={onDeleteSelection}
+					onOpenTimeShift={onOpenTimeShift}
+					onOpenMetadataEditor={onOpenMetadataEditor}
+					onOpenSettings={onOpenSettings}
+					onAutoSegment={onAutoSegment}
+					onOpenAdvancedSegmentation={() => setAdvancedSegmentationDialog(true)}
+					onSyncLineTimestamps={onSyncLineTimestamps}
+					onOpenDistributeRomanization={onOpenDistributeRomanization}
+					onCheckRomanizationWarnings={onCheckRomanizationWarnings}
+					onOpenLatencyTest={onOpenLatencyTest}
+					onOpenGitHub={onOpenGitHub}
+					onOpenWiki={onOpenWiki}
+				/>
 			) : (
 				<Toolbar.Root>
-					<DropdownMenu.Root>
-						<Toolbar.Button asChild>
-							<DropdownMenu.Trigger>
-								<Button
-									variant="soft"
-									style={{
-										borderTopRightRadius: "0",
-										borderBottomRightRadius: "0",
-										marginRight: "0px",
-									}}
-								>
-									<Trans i18nKey="topBar.menu.file">文件</Trans>
-								</Button>
-							</DropdownMenu.Trigger>
-						</Toolbar.Button>
-						<DropdownMenu.Content>
-							<DropdownMenu.Item
-								onSelect={onNewFile}
-								shortcut={formatKeyBindings(newFileKey)}
-							>
-								{t("topBar.menu.newLyric", "新建 TTML 文件")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onSelect={onOpenFile}
-								shortcut={formatKeyBindings(openFileKey)}
-							>
-								{t("topBar.menu.openLyric", "打开 TTML 文件")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Item onSelect={onOpenFileFromClipboard}>
-								{t("topBar.menu.openFromClipboard", "从剪切板打开 TTML 文件")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onSelect={onSaveFile}
-								shortcut={formatKeyBindings(saveFileKey)}
-							>
-								{t("topBar.menu.saveLyric", "保存 TTML 文件")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item onSelect={() => setHistoryRestoreDialog(true)}>
-								{t("topBar.menu.restoreFromHistory", "从历史记录恢复...")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item onSelect={onSaveFileToClipboard}>
-								{t(
-									"topBar.menu.saveLyricToClipboard",
-									"保存 TTML 文件到剪切板",
-								)}
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<ImportExportLyric />
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item onSelect={onSubmitToAMLLDB}>
-								{t("topBar.menu.uploadToAMLLDB", "上传到 AMLL 歌词数据库")}
-							</DropdownMenu.Item>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-
-					<DropdownMenu.Root>
-						<Toolbar.Button asChild>
-							<DropdownMenu.Trigger
-								style={{
-									borderRadius: "0",
-									marginRight: "0px",
-								}}
-							>
-								<Button variant="soft">
-									<Trans i18nKey="topBar.menu.edit">编辑</Trans>
-								</Button>
-							</DropdownMenu.Trigger>
-						</Toolbar.Button>
-						<DropdownMenu.Content>
-							<DropdownMenu.Item
-								onSelect={onUndo}
-								shortcut={formatKeyBindings(undoKey)}
-								disabled={!undoLyricLines.canUndo}
-							>
-								<Trans i18nKey="topBar.menu.undo">撤销</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onSelect={onRedo}
-								shortcut={formatKeyBindings(redoKey)}
-								disabled={!undoLyricLines.canRedo}
-							>
-								<Trans i18nKey="topBar.menu.redo">重做</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item
-								onSelect={onSelectAll}
-								shortcut={formatKeyBindings(selectAllLinesKey)}
-							>
-								<Trans i18nKey="topBar.menu.selectAllLines">
-									选中所有歌词行
-								</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onSelect={onUnselectAll}
-								shortcut={formatKeyBindings(unselectAllLinesKey)}
-							>
-								<Trans i18nKey="topBar.menu.unselectAllLines">
-									取消选中所有歌词行
-								</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onSelect={onSelectInverted}
-								shortcut={formatKeyBindings(selectInvertedLinesKey)}
-							>
-								<Trans i18nKey="topBar.menu.invertSelectAllLines">
-									反选所有歌词行
-								</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item
-								onSelect={onSelectWordsOfMatchedSelection}
-								shortcut={formatKeyBindings(selectWordsOfMatchedSelectionKey)}
-							>
-								<Trans i18nKey="topBar.menu.selectWordsOfMatchedSelection">
-									选择单词匹配项
-								</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item
-								onSelect={onDeleteSelection}
-								shortcut={formatKeyBindings(deleteSelectionKey)}
-							>
-								<Trans i18nKey="contextMenu.deleteWords">删除选定单词</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item onSelect={onOpenTimeShift}>
-								{t("topBar.menu.timeShift", "平移时间...")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item onSelect={onOpenMetadataEditor}>
-								<Trans i18nKey="topBar.menu.editMetadata">编辑歌词元数据</Trans>
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item onSelect={onOpenSettings}>
-								<Trans i18nKey="settingsDialog.title">首选项</Trans>
-							</DropdownMenu.Item>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-
-					<DropdownMenu.Root>
-						<Toolbar.Button asChild>
-							<DropdownMenu.Trigger>
-								<Button
-									variant="soft"
-									style={{
-										borderRadius: "0",
-										marginRight: "0px",
-									}}
-								>
-									{t("topBar.menu.tool", "工具")}
-								</Button>
-							</DropdownMenu.Trigger>
-						</Toolbar.Button>
-						<DropdownMenu.Content>
-							<DropdownMenu.Sub>
-								<DropdownMenu.SubTrigger>
-									{t("topBar.menu.segmentationTools", "分词")}
-								</DropdownMenu.SubTrigger>
-								<DropdownMenu.SubContent>
-									<DropdownMenu.Item onSelect={onAutoSegment}>
-										{t("topBar.menu.autoSegment", "自动分词")}
-									</DropdownMenu.Item>
-									<DropdownMenu.Item
-										onSelect={() => setAdvancedSegmentationDialog(true)}
-									>
-										{t("topBar.menu.advancedSegment", "高级分词...")}
-									</DropdownMenu.Item>
-								</DropdownMenu.SubContent>
-							</DropdownMenu.Sub>
-							<DropdownMenu.Item onSelect={onSyncLineTimestamps}>
-								{t("topBar.menu.syncLineTimestamps", "同步行时间戳")}
-							</DropdownMenu.Item>
-							<DropdownMenu.Sub>
-								<DropdownMenu.SubTrigger>
-									{t("topBar.menu.perWordRomanization.index", "逐字音译")}
-								</DropdownMenu.SubTrigger>
-								<DropdownMenu.SubContent>
-									<DropdownMenu.Item onSelect={onOpenDistributeRomanization}>
-										{t("topBar.menu.perWordRomanization.distribute", "自动分配罗马音...")}
-									</DropdownMenu.Item>
-									<DropdownMenu.Item onSelect={onCheckRomanizationWarnings}>
-										{t("topBar.menu.perWordRomanization.check", "检查")}
-									</DropdownMenu.Item>
-								</DropdownMenu.SubContent>
-							</DropdownMenu.Sub>
-							<DropdownMenu.Item onSelect={onOpenLatencyTest}>
-								{t("settingsDialog.common.latencyTest", "音频/输入延迟测试")}
-							</DropdownMenu.Item>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-
-					<DropdownMenu.Root>
-						<Toolbar.Button asChild>
-							<DropdownMenu.Trigger>
-								<Button
-									variant="soft"
-									style={{
-										borderTopLeftRadius: "0",
-										borderBottomLeftRadius: "0",
-									}}
-								>
-									<Trans i18nKey="topBar.menu.help">帮助</Trans>
-								</Button>
-							</DropdownMenu.Trigger>
-						</Toolbar.Button>
-						<DropdownMenu.Content>
-							<DropdownMenu.Item onSelect={onOpenGitHub}>
-								GitHub
-							</DropdownMenu.Item>
-							<DropdownMenu.Item onSelect={onOpenWiki}>
-								{t("topBar.menu.helpDoc", "使用说明")}
-							</DropdownMenu.Item>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
+					<FileMenu
+						variant="toolbar"
+						newFileKey={newFileKey}
+						openFileKey={openFileKey}
+						saveFileKey={saveFileKey}
+						onNewFile={onNewFile}
+						onOpenFile={onOpenFile}
+						onOpenFileFromClipboard={onOpenFileFromClipboard}
+						onSaveFile={onSaveFile}
+						onOpenHistoryRestore={() => setHistoryRestoreDialog(true)}
+						onSaveFileToClipboard={onSaveFileToClipboard}
+						onSubmitToAMLLDB={onSubmitToAMLLDB}
+						buttonStyle={{
+							borderTopRightRadius: "0",
+							borderBottomRightRadius: "0",
+							marginRight: "0px",
+						}}
+					/>
+					<EditMenu
+						variant="toolbar"
+						undoKey={undoKey}
+						redoKey={redoKey}
+						selectAllLinesKey={selectAllLinesKey}
+						unselectAllLinesKey={unselectAllLinesKey}
+						selectInvertedLinesKey={selectInvertedLinesKey}
+						selectWordsOfMatchedSelectionKey={selectWordsOfMatchedSelectionKey}
+						deleteSelectionKey={deleteSelectionKey}
+						undoDisabled={!undoLyricLines.canUndo}
+						redoDisabled={!undoLyricLines.canRedo}
+						onUndo={onUndo}
+						onRedo={onRedo}
+						onSelectAll={onSelectAll}
+						onUnselectAll={onUnselectAll}
+						onSelectInverted={onSelectInverted}
+						onSelectWordsOfMatchedSelection={onSelectWordsOfMatchedSelection}
+						onDeleteSelection={onDeleteSelection}
+						onOpenTimeShift={onOpenTimeShift}
+						onOpenMetadataEditor={onOpenMetadataEditor}
+						onOpenSettings={onOpenSettings}
+						triggerStyle={{
+							borderRadius: "0",
+							marginRight: "0px",
+						}}
+					/>
+					<ToolMenu
+						variant="toolbar"
+						onAutoSegment={onAutoSegment}
+						onOpenAdvancedSegmentation={() => setAdvancedSegmentationDialog(true)}
+						onSyncLineTimestamps={onSyncLineTimestamps}
+						onOpenDistributeRomanization={onOpenDistributeRomanization}
+						onCheckRomanizationWarnings={onCheckRomanizationWarnings}
+						onOpenLatencyTest={onOpenLatencyTest}
+						triggerStyle={{
+							borderRadius: "0",
+							marginRight: "0px",
+						}}
+					/>
+					<HelpMenu
+						variant="toolbar"
+						onOpenGitHub={onOpenGitHub}
+						onOpenWiki={onOpenWiki}
+						buttonStyle={{
+							borderTopLeftRadius: "0",
+							borderBottomLeftRadius: "0",
+						}}
+					/>
 				</Toolbar.Root>
 			)}
 			<Box style={{ marginLeft: "16px" }}>
