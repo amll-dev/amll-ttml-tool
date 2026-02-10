@@ -172,9 +172,7 @@ export const SplitWordDialog = memo(() => {
 		}
 		parts.push(targetWordText.slice(lastIndex));
 
-		const splittedTextParts = parts
-			.filter((p) => p.trim() !== "")
-			.map((p) => p.trim());
+		const splittedTextParts = parts.filter((p) => p.length > 0);
 
 		if (splittedTextParts.length === 0) return;
 
