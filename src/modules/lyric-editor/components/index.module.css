@@ -90,6 +90,16 @@
 	background-color: var(--red-a4);
 }
 
+.endTimeButton {
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font: inherit;
+	color: inherit;
+}
+
 .lyricWord,
 .lyricWord * {
 	white-space: nowrap;
