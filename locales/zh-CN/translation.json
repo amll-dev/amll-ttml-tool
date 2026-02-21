@@ -196,8 +196,7 @@
 			"autoSegment": "一键分词",
 			"advancedSegment": "高级分词...",
 			"syncLineTimestamps": "同步行时间戳",
-			"perWordRomanization": 
-			{
+			"perWordRomanization": {
 				"index": "逐字音译",
 				"check": "检查逐字音译一致性",
 				"distribute": "自动分配罗马音..."
@@ -610,5 +609,31 @@
 		"offlineReady": "网站已成功离线缓存，后续可离线访问本网页",
 		"updateRefresh": "网站已更新，刷新网页以使用最新版本！",
 		"refresh": "刷新"
+	},
+	"colorToolbar": {
+		"title": "✍️ 快捷调色",
+		"wrapButtonTitle": "一键包裹高亮词，或在光标处生成空括号",
+		"colorPickerTitle": "拾取颜色并打入",
+		"hexInputTitle": "输入HEX按回车打入",
+		"presetSlot": {
+			"occupiedTitle": "左键插入：{{color}}\n右键覆盖为：{{currentColor}}",
+			"emptyTitle": "空槽位\n右键存入：{{currentColor}}"
+		},
+		"libraryButtonTitle": "打开高级色彩库与项目文件夹"
+	},
+	"colorLibrary": {
+		"header": "📂 色彩资产库",
+		"renameButton": "重命名",
+		"deleteButton": "删除",
+		"addButton": "+新建",
+		"slotCountLabel": "主面板显示颜色数量 (3-20)：",
+		"orientationLabel": "主面板排列方向：",
+		"orientationHorizontal": "横向长条",
+		"orientationVertical": "竖向塔式",
+		"hint": "💡 左键：插入颜色 | 右键：将当前颜色保存在此格子"
+	},
+	"colorFeatures": {
+		"title": "启用颜色功能（实验性）",
+		"desc": "启用后可在编辑器中添加颜色标记，并显示悬浮调色工具栏。"
 	}
 }

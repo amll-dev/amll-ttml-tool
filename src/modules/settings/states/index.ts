@@ -70,3 +70,8 @@ export const enableAutoRomanizationPredictionAtom = atomWithStorage(
 	"enableAutoRomanizationPrediction",
 	false,
 );
+
+export const enableColorFeaturesAtom = atomWithStorage(
+	"enableColorFeatures",
+	false,
+);

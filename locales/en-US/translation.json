@@ -196,8 +196,7 @@
 			"autoSegment": "Auto Segment",
 			"advancedSegment": "Advanced Segment...",
 			"syncLineTimestamps": "Sync Line Timestamps",
-			"perWordRomanization":
-			{
+			"perWordRomanization": {
 				"index": "Per-Word Romanization",
 				"check": "Check Per-Word Romanization",
 				"distribute": "Distribute Romanization..."
@@ -610,5 +609,31 @@
 		"offlineReady": "Site successfully cached for offline use",
 		"updateRefresh": "Site updated, refresh to use the latest version!",
 		"refresh": "Refresh"
+	},
+	"colorToolbar": {
+		"title": "✍️ Quick Color",
+		"wrapButtonTitle": "Wrap selected text with brackets, or insert empty brackets at cursor",
+		"colorPickerTitle": "Pick a color and insert",
+		"hexInputTitle": "Enter HEX and press Enter to insert",
+		"presetSlot": {
+			"occupiedTitle": "Left click to insert: {{color}}\nRight click to overwrite with: {{currentColor}}",
+			"emptyTitle": "Empty slot\nRight click to save: {{currentColor}}"
+		},
+		"libraryButtonTitle": "Open advanced color library"
+	},
+	"colorLibrary": {
+		"header": "📂 Color Library",
+		"renameButton": "Rename",
+		"deleteButton": "Delete",
+		"addButton": "+New",
+		"slotCountLabel": "Main panel slots (3-20):",
+		"orientationLabel": "Main panel orientation:",
+		"orientationHorizontal": "Horizontal",
+		"orientationVertical": "Vertical",
+		"hint": "💡 Left click: insert color | Right click: save current color to this slot"
+	},
+	"colorFeatures": {
+		"title": "Enable Color Features (Experimental)",
+		"desc": "Enable to add color tags in lyrics and show the floating color toolbar."
 	}
 }
