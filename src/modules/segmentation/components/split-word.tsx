@@ -162,26 +162,28 @@ export const SplitWordDialog = memo(() => {
 	const handleSplit = useCallback(() => {
 		if (!targetWordText) return;
 
-		const parts: string[] = [];
-		let lastIndex = 0;
 		const sortedIndices = Array.from(splitIndices).sort((a, b) => a - b);
+		const buildSegments = (text: string) => {
+			const parts: string[] = [];
+			let lastIndex = 0;
+			for (const index of sortedIndices) {
+				if (index <= lastIndex) continue;
+				parts.push(text.slice(lastIndex, index));
+				lastIndex = index;
+			}
+			parts.push(text.slice(lastIndex));
+			return parts.filter((p) => p.length > 0);
+		};
 
-		for (const index of sortedIndices) {
-			parts.push(targetWordText.slice(lastIndex, index));
-			lastIndex = index;
-		}
-		parts.push(targetWordText.slice(lastIndex));
+		const targetSegments = buildSegments(targetWordText);
 
-		const splittedTextParts = parts.filter((p) => p.length > 0);
+		if (targetSegments.length === 0) return;
 
-		if (splittedTextParts.length === 0) return;
-
-		const createNewWords = (targetWord: LyricWord): LyricWord[] => {
-			return recalculateWordTime(
-				targetWord,
-				splittedTextParts,
-				segmentationConfig,
-			);
+		const createNewWords = (
+			targetWord: LyricWord,
+			segments: string[],
+		): LyricWord[] => {
+			return recalculateWordTime(targetWord, segments, segmentationConfig);
 		};
 
 		editLyricLines((state) => {
@@ -195,7 +197,13 @@ export const SplitWordDialog = memo(() => {
 							: word.word === targetWordText;
 
 						if (isMatch) {
-							return createNewWords(word);
+							const wordSegments = ignoreCase
+								? buildSegments(word.word)
+								: targetSegments;
+							return createNewWords(
+								word,
+								wordSegments.length > 0 ? wordSegments : targetSegments,
+							);
 						}
 						return word;
 					});
@@ -208,7 +216,7 @@ export const SplitWordDialog = memo(() => {
 						line.words.splice(
 							editingState.wordIndex,
 							1,
-							...createNewWords(word),
+							...createNewWords(word, targetSegments),
 						);
 					}
 				}
