@@ -390,7 +390,6 @@ export const LyricLineView: FC<{
 		(evt: React.MouseEvent<HTMLButtonElement>) => {
 			evt.preventDefault();
 			evt.stopPropagation();
-			const nextLine = lyricLines.lyricLines[lineIndex + 1];
 			if (endTimeLinked) {
 				setEndTimeLinked(false);
 				originalEndTimeRef.current = null;
@@ -447,9 +446,7 @@ export const LyricLineView: FC<{
 		[
 			editLyricLines,
 			endTimeLinked,
-			line.endTime,
 			lineIndex,
-			lyricLines,
 		],
 	);
 
