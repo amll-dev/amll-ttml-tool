@@ -55,6 +55,10 @@ export interface LyricLine extends AMLLLyricLine {
 	// startTime: number;
 	// endTime: number;
 	ignoreSync: boolean;
+	endTimeLink?: {
+		originalEndTime: number;
+		originalNextStartTime: number | null;
+	};
 }
 
 export const newLyricLine = (): LyricLine => ({

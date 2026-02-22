@@ -298,9 +298,7 @@ export const LyricLineView: FC<{
 	const startTimeRef = useRef<HTMLDivElement>(null);
 	const endTimeRef = useRef<HTMLButtonElement>(null);
 	const [enableInsert, setEnableInsert] = useState(false);
-	const [endTimeLinked, setEndTimeLinked] = useState(false);
-	const originalEndTimeRef = useRef<number | null>(null);
-	const originalNextStartTimeRef = useRef<number | null>(null);
+	const endTimeLinked = !!line.endTimeLink;
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: 用于呈现时间戳更新效果
 	useEffect(() => {
@@ -356,7 +354,11 @@ export const LyricLineView: FC<{
 		if (!endTimeLinked) return;
 		const nextLine = lyricLines.lyricLines[lineIndex + 1];
 		if (!nextLine) {
-			setEndTimeLinked(false);
+			editLyricLines((state) => {
+				const targetLine = state.lyricLines[lineIndex];
+				if (!targetLine) return;
+				delete targetLine.endTimeLink;
+			});
 			return;
 		}
 		if (nextLine.startTime === line.endTime) return;
@@ -379,46 +381,41 @@ export const LyricLineView: FC<{
 		(evt: React.MouseEvent<HTMLButtonElement>) => {
 			evt.preventDefault();
 			evt.stopPropagation();
-			const nextLine = lyricLines.lyricLines[lineIndex + 1];
 			if (endTimeLinked) {
-				setEndTimeLinked(false);
-				const originalEndTime = originalEndTimeRef.current;
-				const originalNextStartTime = originalNextStartTimeRef.current;
-				originalEndTimeRef.current = null;
-				originalNextStartTimeRef.current = null;
-				if (originalEndTime === null) return;
 				editLyricLines((state) => {
 					const targetLine = state.lyricLines[lineIndex];
 					if (!targetLine) return;
-					targetLine.endTime = originalEndTime;
+					const linkInfo = targetLine.endTimeLink;
+					if (!linkInfo) return;
+					targetLine.endTime = linkInfo.originalEndTime;
 					const nextTarget = state.lyricLines[lineIndex + 1];
-					if (nextTarget && originalNextStartTime !== null) {
-						nextTarget.startTime = originalNextStartTime;
+					if (nextTarget && linkInfo.originalNextStartTime !== null) {
+						nextTarget.startTime = linkInfo.originalNextStartTime;
 					}
+					delete targetLine.endTimeLink;
 				});
 				return;
 			}
-			originalEndTimeRef.current = line.endTime;
-			originalNextStartTimeRef.current = nextLine?.startTime ?? null;
 			editLyricLines((state) => {
 				const targetLine = state.lyricLines[lineIndex];
 				if (!targetLine) return;
 				const nextTarget = state.lyricLines[lineIndex + 1];
+				const originalEndTime = targetLine.endTime;
+				const originalNextStartTime = nextTarget?.startTime ?? null;
 				const desiredEndTime =
 					nextTarget?.startTime ?? targetLine.endTime;
 				targetLine.endTime = desiredEndTime;
 				if (nextTarget) nextTarget.startTime = desiredEndTime;
+				targetLine.endTimeLink = {
+					originalEndTime,
+					originalNextStartTime,
+				};
 			});
-			if (nextLine) {
-				setEndTimeLinked(true);
-			}
 		},
 		[
 			editLyricLines,
 			endTimeLinked,
-			line.endTime,
 			lineIndex,
-			lyricLines,
 		],
 	);
 
