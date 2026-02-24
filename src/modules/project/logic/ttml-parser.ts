@@ -20,6 +20,7 @@ import { uid } from "uid";
 import type {
 	LyricLine,
 	LyricWord,
+	LyricWordBase,
 	TTMLLyric,
 	TTMLMetadata,
 } from "../../../types/ttml.ts";
@@ -40,6 +41,190 @@ interface LineMetadata {
 interface WordRomanMetadata {
 	main: RomanWord[];
 	bg: RomanWord[];
+}
+
+interface SpanNode {
+	text: string;
+	begin: string | null;
+	end: string | null;
+	role: string | null;
+	lang: string | null;
+	emptyBeat: string | null;
+	ruby: string | null;
+	children: SpanNode[];
+	tail: string;
+}
+
+function localName(el: Element): string {
+	return el.localName || el.tagName.split(":").pop() || el.tagName;
+}
+
+function getAttr(el: Element, target: string): string | null {
+	const direct = el.getAttribute(target);
+	if (direct !== null) {
+		return direct;
+	}
+	for (const attr of Array.from(el.attributes)) {
+		if (
+			attr.localName === target ||
+			attr.name === target ||
+			attr.name.endsWith(`:${target}`)
+		) {
+			return attr.value;
+		}
+	}
+	return null;
+}
+
+function parseSpan(spanEl: Element): SpanNode {
+	const span: SpanNode = {
+		text: "",
+		begin: getAttr(spanEl, "begin"),
+		end: getAttr(spanEl, "end"),
+		role: getAttr(spanEl, "role"),
+		lang: getAttr(spanEl, "lang"),
+		emptyBeat: getAttr(spanEl, "empty-beat"),
+		ruby: getAttr(spanEl, "ruby"),
+		children: [],
+		tail: "",
+	};
+	let lastChild: SpanNode | null = null;
+	for (const node of Array.from(spanEl.childNodes)) {
+		if (node.nodeType === Node.TEXT_NODE) {
+			const text = node.textContent ?? "";
+			if (lastChild) {
+				lastChild.tail += text;
+			} else {
+				span.text += text;
+			}
+		} else if (node.nodeType === Node.ELEMENT_NODE) {
+			const childEl = node as Element;
+			if (localName(childEl) === "span") {
+				const child = parseSpan(childEl);
+				span.children.push(child);
+				lastChild = child;
+			}
+		}
+	}
+	return span;
+}
+
+function flattenSpanText(span: SpanNode, skipRoles?: Set<string>): string {
+	const skipCurrent = span.role ? skipRoles?.has(span.role) : false;
+	let text = "";
+	if (!skipCurrent) {
+		text += span.text || "";
+		for (const child of span.children) {
+			text += flattenSpanText(child, skipRoles);
+		}
+	}
+	text += span.tail || "";
+	return text;
+}
+
+function flattenSpanInnerText(span: SpanNode, skipRoles?: Set<string>): string {
+	const skipCurrent = span.role ? skipRoles?.has(span.role) : false;
+	let text = "";
+	if (!skipCurrent) {
+		text += span.text || "";
+		for (const child of span.children) {
+			text += flattenSpanText(child, skipRoles);
+		}
+	}
+	return text;
+}
+
+function collectRubyTextSpans(span: SpanNode): SpanNode[] {
+	const results: SpanNode[] = [];
+	if (span.ruby === "text") {
+		results.push(span);
+	}
+	for (const child of span.children) {
+		results.push(...collectRubyTextSpans(child));
+	}
+	return results;
+}
+
+function computeWordTiming(words: LyricWordBase[]): [number, number] {
+	const filtered = words.filter((v) => v.word.trim().length > 0);
+	const start =
+		filtered.reduce(
+			(pv, cv) => Math.min(pv, cv.startTime),
+			Number.POSITIVE_INFINITY,
+		) ?? 0;
+	const end = filtered.reduce((pv, cv) => Math.max(pv, cv.endTime), 0);
+	return [start === Number.POSITIVE_INFINITY ? 0 : start, end];
+}
+
+function createWordFromSpanElement(wordEl: Element): LyricWord | null {
+	const begin = getAttr(wordEl, "begin");
+	const end = getAttr(wordEl, "end");
+	const spanNode = parseSpan(wordEl);
+	const skipRoles = new Set(["x-translation", "x-roman"]);
+	if (spanNode.ruby === "container") {
+		const baseSpan = spanNode.children.find((child) => child.ruby === "base");
+		const baseText = baseSpan
+			? flattenSpanInnerText(baseSpan, skipRoles)
+			: flattenSpanInnerText(spanNode, skipRoles);
+		const rubyTextSpans = collectRubyTextSpans(spanNode);
+		const containerStart = begin ? parseTimespan(begin) : null;
+		const containerEnd = end ? parseTimespan(end) : null;
+		const rubyWords: LyricWordBase[] = rubyTextSpans.map((rubySpan) => {
+			const rubyBegin = rubySpan.begin
+				? parseTimespan(rubySpan.begin)
+				: containerStart ?? 0;
+			const rubyEnd = rubySpan.end
+				? parseTimespan(rubySpan.end)
+				: containerEnd ?? 0;
+			return {
+				word: flattenSpanInnerText(rubySpan, skipRoles),
+				startTime: rubyBegin,
+				endTime: rubyEnd,
+			};
+		});
+		const [rubyStart, rubyEnd] = computeWordTiming(rubyWords);
+		const word: LyricWord = {
+			id: uid(),
+			word: baseText,
+			startTime: containerStart ?? rubyStart,
+			endTime: containerEnd ?? rubyEnd,
+			obscene: false,
+			emptyBeat: 0,
+			romanWord: "",
+			ruby: rubyWords.length > 0 ? rubyWords : undefined,
+		};
+		const emptyBeat = getAttr(wordEl, "empty-beat");
+		if (emptyBeat) {
+			word.emptyBeat = Number(emptyBeat);
+		}
+		const obscene = getAttr(wordEl, "obscene");
+		if (obscene === "true") {
+			word.obscene = true;
+		}
+		return word;
+	}
+	if (!begin || !end) {
+		return null;
+	}
+	const wordText = flattenSpanInnerText(spanNode, skipRoles);
+	const word: LyricWord = {
+		id: uid(),
+		word: wordText,
+		startTime: parseTimespan(begin),
+		endTime: parseTimespan(end),
+		obscene: false,
+		emptyBeat: 0,
+		romanWord: "",
+	};
+	const emptyBeat = getAttr(wordEl, "empty-beat");
+	if (emptyBeat) {
+		word.emptyBeat = Number(emptyBeat);
+	}
+	const obscene = getAttr(wordEl, "obscene");
+	if (obscene === "true") {
+		word.obscene = true;
+	}
+	return word;
 }
 
 export function parseLyric(ttmlText: string): TTMLLyric {
@@ -338,29 +523,13 @@ export function parseLyric(ttmlText: string): TTMLLyric {
 							line.romanLyric = wordEl.innerHTML;
 						}
 					}
-				} else if (wordEl.hasAttribute("begin") && wordEl.hasAttribute("end")) {
-					const wordStartTime = parseTimespan(
-						wordEl.getAttribute("begin") ?? "",
-					);
-					const wordEndTime = parseTimespan(wordEl.getAttribute("end") ?? "");
-
-					const word: LyricWord = {
-						id: uid(),
-						word: wordNode.textContent ?? "",
-						startTime: wordStartTime,
-						endTime: wordEndTime,
-						obscene: false,
-						emptyBeat: 0,
-						romanWord: "",
-					};
-					const emptyBeat = wordEl.getAttribute("amll:empty-beat");
-					if (emptyBeat) word.emptyBeat = Number(emptyBeat);
-					const obscene = wordEl.getAttribute("amll:obscene");
-					if (obscene === "true") word.obscene = true;
-
+				} else {
+					const word = createWordFromSpanElement(wordEl);
+					if (!word) continue;
 					if (availableRomanWords.length > 0) {
 						const matchIndex = availableRomanWords.findIndex(
-							(r) => r.startTime === wordStartTime && r.endTime === wordEndTime,
+							(r) =>
+								r.startTime === word.startTime && r.endTime === word.endTime,
 						);
 
 						if (matchIndex !== -1) {

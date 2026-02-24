@@ -2,12 +2,15 @@ import { produce } from "immer";
 import { useStore } from "jotai";
 import { type FC, useCallback } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
+import type { LyricLine, LyricWord, LyricWordBase } from "$/types/ttml";
 import {
 	findNextWord,
 	getCurrentLineLocation,
 	getCurrentLocation,
+	getFirstSynchronizableUnit,
+	getLastSynchronizableUnit,
+	getSynchronizableUnits,
 	isSynchronizableLine,
-	isSynchronizableWord,
 } from "$/modules/lyric-editor/utils/lyric-states";
 import {
 	SyncJudgeMode,
@@ -42,6 +45,49 @@ import {
 	type KeyBindingEvent,
 	useKeyBindingAtom,
 } from "$/utils/keybindings.ts";
+
+const getUnitStartTime = (unit: {
+	word: LyricWord;
+	rubyWord?: LyricWordBase;
+}) => unit.rubyWord?.startTime ?? unit.word.startTime;
+
+const updateRubyParentTime = (word: LyricWord) => {
+	if (!word.ruby || word.ruby.length === 0) return;
+	const rubyStarts = word.ruby.map((ruby) => ruby.startTime);
+	const rubyEnds = word.ruby.map((ruby) => ruby.endTime);
+	word.startTime = Math.min(...rubyStarts);
+	word.endTime = Math.max(...rubyEnds);
+};
+
+const setUnitStartTime = (
+	line: LyricLine,
+	wordIndex: number,
+	rubyIndex: number | undefined,
+	time: number,
+) => {
+	const word = line.words[wordIndex];
+	if (rubyIndex !== undefined && word.ruby?.[rubyIndex]) {
+		word.ruby[rubyIndex].startTime = time;
+		updateRubyParentTime(word);
+		return;
+	}
+	word.startTime = time;
+};
+
+const setUnitEndTime = (
+	line: LyricLine,
+	wordIndex: number,
+	rubyIndex: number | undefined,
+	time: number,
+) => {
+	const word = line.words[wordIndex];
+	if (rubyIndex !== undefined && word.ruby?.[rubyIndex]) {
+		word.ruby[rubyIndex].endTime = time;
+		updateRubyParentTime(word);
+		return;
+	}
+	word.endTime = time;
+};
 
 export const SyncKeyBinding: FC = () => {
 	const store = useStore();
@@ -90,13 +136,14 @@ export const SyncKeyBinding: FC = () => {
 			const nextWord = findNextWord(
 				location.lines,
 				location.lineIndex,
-				location.wordIndex,
+				location.syncIndex,
 			);
 			if (!nextWord) return false;
-			store.set(selectedWordsAtom, new Set([nextWord.word.id]));
+			store.set(selectedWordsAtom, new Set([nextWord.unit.id]));
 			store.set(selectedLinesAtom, new Set([nextWord.line.id]));
 			store.set(currentEmptyBeatAtom, 0);
-			if (play) audioEngine.seekMusic(nextWord.word.startTime / 1000);
+			if (play)
+				audioEngine.seekMusic(getUnitStartTime(nextWord.unit) / 1000);
 			return true;
 		},
 		[store],
@@ -115,34 +162,34 @@ export const SyncKeyBinding: FC = () => {
 		(play: boolean): boolean => {
 			const location = getCurrentLocation(store);
 			if (!location) return false;
-			if (location.wordIndex === 0) {
+			if (location.syncIndex === 0) {
 				if (location.lineIndex === 0) return false;
 				const lastLineIndex = Math.max(0, location.lineIndex);
 				const lastLine = location.lines
 					.slice(0, lastLineIndex)
 					.reverse()
-					.find(isSynchronizableLine);
+					.find(
+						(line) =>
+							isSynchronizableLine(line) &&
+							getSynchronizableUnits(line).length > 0,
+					);
 				if (!lastLine) return false;
 				store.set(selectedLinesAtom, new Set([lastLine.id]));
-				if (lastLine.words.length === 0) {
+				const lastUnit = getLastSynchronizableUnit(lastLine);
+				if (!lastUnit) {
 					store.set(selectedWordsAtom, new Set());
 				} else {
-					const lastWord = lastLine.words
-						.slice()
-						.reverse()
-						.find(isSynchronizableWord);
-					if (!lastWord) return false;
-					store.set(selectedWordsAtom, new Set([lastWord.id]));
-					if (play) audioEngine.seekMusic(lastWord.startTime / 1000);
+					store.set(selectedWordsAtom, new Set([lastUnit.id]));
+					if (play)
+						audioEngine.seekMusic(getUnitStartTime(lastUnit) / 1000);
 				}
 			} else {
-				const prevWord = location.line.words
-					.slice(0, location.wordIndex)
-					.reverse()
-					.find(isSynchronizableWord);
-				if (!prevWord) return false;
-				store.set(selectedWordsAtom, new Set([prevWord.id]));
-				if (play) audioEngine.seekMusic(prevWord.startTime / 1000);
+				const lineUnits = getSynchronizableUnits(location.line);
+				const prevUnit = lineUnits[location.syncIndex - 1];
+				if (!prevUnit) return false;
+				store.set(selectedWordsAtom, new Set([prevUnit.id]));
+				if (play)
+					audioEngine.seekMusic(getUnitStartTime(prevUnit) / 1000);
 			}
 			return true;
 		},
@@ -169,10 +216,11 @@ export const SyncKeyBinding: FC = () => {
 		const lastLine = location.lines[lastLineIndex];
 		if (!lastLine) return;
 		store.set(selectedLinesAtom, new Set([lastLine.id]));
-		if (lastLine.words.length === 0) {
+		const firstUnit = getFirstSynchronizableUnit(lastLine);
+		if (!firstUnit) {
 			store.set(selectedWordsAtom, new Set());
 		} else {
-			store.set(selectedWordsAtom, new Set([lastLine.words[0]?.id]));
+			store.set(selectedWordsAtom, new Set([firstUnit.id]));
 		}
 	}, [store]);
 
@@ -183,10 +231,11 @@ export const SyncKeyBinding: FC = () => {
 		const lastLine = location.lines[lastLineIndex];
 		if (!lastLine) return;
 		store.set(selectedLinesAtom, new Set([lastLine.id]));
-		if (lastLine.words.length === 0) {
+		const firstUnit = getFirstSynchronizableUnit(lastLine);
+		if (!firstUnit) {
 			store.set(selectedWordsAtom, new Set());
 		} else {
-			store.set(selectedWordsAtom, new Set([lastLine.words[0]?.id]));
+			store.set(selectedWordsAtom, new Set([firstUnit.id]));
 		}
 	}, [store]);
 
@@ -198,29 +247,21 @@ export const SyncKeyBinding: FC = () => {
 	useKeyBindingAtom(keyMoveLastWordAndPlayAtom, () => {
 		const location = getCurrentLineLocation(store);
 		if (!location) return;
-
-		const lastWord = location.line.words
-			.slice()
-			.reverse()
-			.find(isSynchronizableWord);
-
-		if (!lastWord) return;
-
-		store.set(selectedWordsAtom, new Set([lastWord.id]));
+		const lastUnit = getLastSynchronizableUnit(location.line);
+		if (!lastUnit) return;
+		store.set(selectedWordsAtom, new Set([lastUnit.id]));
 		store.set(selectedLinesAtom, new Set([location.line.id]));
-		audioEngine.seekMusic(lastWord.startTime / 1000);
+		audioEngine.seekMusic(getUnitStartTime(lastUnit) / 1000);
 	}, [store]);
 
 	useKeyBindingAtom(keyMoveFirstWordAndPlayAtom, () => {
 		const location = getCurrentLineLocation(store);
 		if (!location) return;
-
-		const firstWord = location.line.words.find(isSynchronizableWord);
-		if (!firstWord) return;
-
-		store.set(selectedWordsAtom, new Set([firstWord.id]));
+		const firstUnit = getFirstSynchronizableUnit(location.line);
+		if (!firstUnit) return;
+		store.set(selectedWordsAtom, new Set([firstUnit.id]));
 		store.set(selectedLinesAtom, new Set([location.line.id]));
-		audioEngine.seekMusic(firstWord.startTime / 1000);
+		audioEngine.seekMusic(getUnitStartTime(firstUnit) / 1000);
 	}, [store]);
 
 	// 记录时间戳（主要打轴按键）
@@ -243,7 +284,12 @@ export const SyncKeyBinding: FC = () => {
 					if (location.isFirstWord) {
 						line.startTime = currentTime;
 					}
-					line.words[location.wordIndex].startTime = currentTime;
+					setUnitStartTime(
+						line,
+						location.wordIndex,
+						location.rubyIndex,
+						currentTime,
+					);
 				}),
 			);
 		},
@@ -265,7 +311,12 @@ export const SyncKeyBinding: FC = () => {
 						produce(state, (state) => {
 							const line = state.lyricLines[location.lineIndex];
 							line.startTime = currentTime;
-							line.words[location.wordIndex].startTime = currentTime;
+							setUnitStartTime(
+								line,
+								location.wordIndex,
+								location.rubyIndex,
+								currentTime,
+							);
 						}),
 					);
 					store.set(smartFirstWordActiveIdAtom, location.word.id);
@@ -286,7 +337,12 @@ export const SyncKeyBinding: FC = () => {
 				store.set(lyricLinesAtom, (state) =>
 					produce(state, (state) => {
 						const line = state.lyricLines[location.lineIndex];
-						line.words[location.wordIndex].endTime = currentTime;
+						setUnitEndTime(
+							line,
+							location.wordIndex,
+							location.rubyIndex,
+							currentTime,
+						);
 						line.endTime = currentTime;
 					}),
 				);
@@ -297,18 +353,28 @@ export const SyncKeyBinding: FC = () => {
 			store.set(lyricLinesAtom, (state) =>
 				produce(state, (state) => {
 					const curLine = state.lyricLines[location.lineIndex];
-					curLine.words[location.wordIndex].endTime = currentTime;
+					setUnitEndTime(
+						curLine,
+						location.wordIndex,
+						location.rubyIndex,
+						currentTime,
+					);
 					const nextWord = findNextWord(
 						state.lyricLines,
 						location.lineIndex,
-						location.wordIndex,
+						location.syncIndex,
 					);
 					if (nextWord) {
 						if (curLine !== nextWord.line) {
 							curLine.endTime = currentTime;
 							nextWord.line.startTime = currentTime;
 						}
-						nextWord.word.startTime = currentTime;
+						setUnitStartTime(
+							nextWord.line,
+							nextWord.unit.wordIndex,
+							nextWord.unit.rubyIndex,
+							currentTime,
+						);
 					}
 				}),
 			);
@@ -333,7 +399,12 @@ export const SyncKeyBinding: FC = () => {
 			store.set(lyricLinesAtom, (state) =>
 				produce(state, (state) => {
 					const line = state.lyricLines[location.lineIndex];
-					line.words[location.wordIndex].endTime = currentTime;
+					setUnitEndTime(
+						line,
+						location.wordIndex,
+						location.rubyIndex,
+						currentTime,
+					);
 					if (location.isLastWord) {
 						line.endTime = currentTime;
 					}

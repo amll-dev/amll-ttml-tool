@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 Steve Xiao (stevexmh@qq.com) and contributors.
+ * Copyright 2023-2026 Steve Xiao (stevexmh@qq.com) and contributors.
  *
  * 本源代码文件是属于 AMLL TTML Tool 项目的一部分。
  * This source code file is a part of AMLL TTML Tool project.
@@ -54,12 +54,18 @@ import {
 	ToolMode,
 	toolModeAtom,
 } from "$/states/main.ts";
-import { type LyricLine, type LyricWord, newLyricWord } from "$/types/ttml.ts";
+import {
+	type LyricLine,
+	type LyricWord,
+	newLyricWord,
+} from "$/types/ttml.ts";
 import { msToTimestamp, parseTimespan } from "$/utils/timestamp.ts";
 import { normalizeLineTime } from "../utils/normalize-line-time.ts";
+import { buildRubySelectionId } from "../utils/lyric-states.ts";
 import styles from "./index.module.css";
 import { LyricLineMenu } from "./lyric-line-menu.tsx";
 import { LyricWordMenu } from "./lyric-word-menu";
+import { RubyEditor } from "../tools/RubyEditor.tsx";
 
 const isDraggingAtom = atom(false);
 
@@ -68,6 +74,36 @@ const useWordBlank = (word: string) =>
 		() => word.length === 0 || (word.length > 0 && word.trim().length === 0),
 		[word],
 	);
+
+const parseRubyShortcut = (value: string) => {
+	if (value.endsWith("|")) {
+		return {
+			word: value.slice(0, -1),
+			enableRuby: true,
+		};
+	}
+	return {
+		word: value,
+		enableRuby: false,
+	};
+};
+
+const getDisplayWordText = (
+	t: (key: string, defaultValue: string, options?: { count?: number }) => string,
+	word: string,
+	isWordBlank: boolean,
+	romanWord?: string,
+	displayRomanizationInSync?: boolean,
+) => {
+	if (displayRomanizationInSync && romanWord && romanWord.trim() !== "")
+		return romanWord;
+	if (word === "") return t("lyricWordView.empty", "空白");
+	if (isWordBlank)
+		return t("lyricWordView.spaceCount", "空格 x{count}", {
+			count: word.length,
+		});
+	return word;
+};
 
 type LyricWordViewEditProps = {
 	wordAtom: Atom<LyricWord>;
@@ -334,12 +370,22 @@ function WordEditField<F extends keyof LyricWord, V extends LyricWord[F]>({
 		(rawValue: string) => {
 			try {
 				const thisWord = store.get(wordAtom);
-				const value = parser(rawValue);
+				const { word: inputWord, enableRuby } =
+					fieldName === "word"
+						? parseRubyShortcut(rawValue)
+						: { word: rawValue, enableRuby: false };
+				const value =
+					fieldName === "word"
+						? (inputWord as unknown as V)
+						: parser(inputWord as string);
 				editLyricLines((state) => {
 					for (const line of state.lyricLines) {
 						for (const word of line.words) {
 							if (thisWord.id === word.id) {
 								word[fieldName] = value;
+								if (fieldName === "word" && enableRuby && !word.ruby) {
+									word.ruby = [];
+								}
 								break;
 							}
 						}
@@ -399,6 +445,10 @@ const LyricWordViewEditAdvance = ({
 	const isWordSelected = useAtomValue(isWordSelectedAtom);
 
 	const isWordBlank = useWordBlank(currentWord.word);
+	const showRubyEditor = useMemo(
+		() => currentWord.ruby !== undefined,
+		[currentWord.ruby],
+	);
 
 	const hasError = useMemo(
 		() => currentWord.startTime > currentWord.endTime,
@@ -413,9 +463,10 @@ const LyricWordViewEditAdvance = ({
 				styles.advance,
 				isWordSelected && styles.selected,
 				isWordBlank && styles.blank,
+				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
 			),
-		[isWordBlank, isWordSelected, hasError, toolMode],
+		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
 	);
 
 	return (
@@ -458,7 +509,7 @@ const LyricWordViewEditAdvance = ({
 						>
 							<CutRegular />
 						</IconButton>
-						<WordEditField
+					<WordEditField
 							size="1"
 							wordAtom={wordAtom}
 							fieldName="word"
@@ -484,6 +535,14 @@ const LyricWordViewEditAdvance = ({
 						>
 							<DeleteRegular />
 						</IconButton>
+					</div>
+					<div className={styles.rubyAdvanceRow}>
+						<RubyEditor
+							wordAtom={wordAtom}
+							forceShow
+							showIcon
+							className={styles.rubyEditorCompact}
+						/>
 					</div>
 					<WordEditField
 						size="1"
@@ -552,6 +611,7 @@ const LyricWorldViewEdit = ({
 	line,
 	lineIndex,
 }: LyricWordViewEditProps) => {
+	const { t } = useTranslation();
 	const word = useAtomValue(wordAtom);
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 	const setSelectedLines = useSetImmerAtom(selectedLinesAtom);
@@ -564,7 +624,8 @@ const LyricWorldViewEdit = ({
 	const [editing, setEditing] = useState(false);
 	const toolMode = useAtomValue(toolModeAtom);
 	const isWordBlank = useWordBlank(word.word);
-	const displayWord = useDisplayWord(word.word, isWordBlank);
+	const displayWord = getDisplayWordText(t, word.word, isWordBlank);
+	const showRubyEditor = useMemo(() => word.ruby !== undefined, [word.ruby]);
 
 	const hasError = useMemo(
 		() => word.startTime > word.endTime,
@@ -578,18 +639,26 @@ const LyricWorldViewEdit = ({
 				styles.edit,
 				isWordSelected && styles.selected,
 				isWordBlank && styles.blank,
+				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
 			),
-		[isWordBlank, isWordSelected, hasError, toolMode],
+		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
 	);
 
 	const onEnter = useCallback(
 		(evt: SyntheticEvent<HTMLInputElement>) => {
 			setEditing(false);
-			const newWord = evt.currentTarget.value;
-			if (newWord !== word.word) {
+			const { word: parsedWord, enableRuby } = parseRubyShortcut(
+				evt.currentTarget.value,
+			);
+			if (parsedWord !== word.word || enableRuby) {
 				editLyricLines((state) => {
-					state.lyricLines[lineIndex].words[wordIndex].word = newWord;
+					const targetWord = state.lyricLines[lineIndex]?.words[wordIndex];
+					if (!targetWord) return;
+					targetWord.word = parsedWord;
+					if (enableRuby && !targetWord.ruby) {
+						targetWord.ruby = [];
+					}
 				});
 			}
 		},
@@ -597,14 +666,19 @@ const LyricWorldViewEdit = ({
 	);
 
 	return editing ? (
-		<TextField.Root
-			autoFocus
-			defaultValue={word.word}
-			onBlur={onEnter}
-			onKeyDown={(evt) => {
-				if (evt.key === "Enter") onEnter(evt);
-			}}
-		/>
+		<div className={className}>
+			<span className={styles.wordEditRow}>
+				<TextField.Root
+					autoFocus
+					defaultValue={word.word}
+					onBlur={onEnter}
+					onKeyDown={(evt) => {
+						if (evt.key === "Enter") onEnter(evt);
+					}}
+				/>
+				{showRubyEditor && <RubyEditor wordAtom={wordAtom} />}
+			</span>
+		</div>
 	) : (
 		<ContextMenu.Root
 			onOpenChange={(open) => {
@@ -631,7 +705,10 @@ const LyricWorldViewEdit = ({
 						setEditing(true);
 					}}
 				>
-					{displayWord}
+					<span className={styles.wordEditRow}>
+						{displayWord}
+						{showRubyEditor && <RubyEditor wordAtom={wordAtom} />}
+					</span>
 				</LyricWordViewEditSpan>
 			</ContextMenu.Trigger>
 			<ContextMenu.Content>
@@ -646,25 +723,25 @@ const LyricWorldViewEdit = ({
 	);
 };
 
-const LyricWorldViewSync: FC<{
-	wordAtom: Atom<LyricWord>;
-	wordIndex: number;
+const LyricSyncWordView: FC<{
+	syncId: string;
 	line: LyricLine;
-	lineIndex: number;
-}> = ({ wordAtom, line }) => {
-	const word = useAtomValue(wordAtom);
+	startTime: number;
+	endTime: number;
+	displayWord: string;
+	isWordBlank: boolean;
+}> = ({ syncId, line, startTime, endTime, displayWord, isWordBlank }) => {
 	const isWordSelectedAtom = useMemo(
-		() => atom((get) => get(selectedWordsAtom).has(get(wordAtom).id)),
-		[wordAtom],
+		() => atom((get) => get(selectedWordsAtom).has(syncId)),
+		[syncId],
 	);
 	const isWordActiveAtom = useMemo(
 		() =>
 			atom((get) => {
 				const currentTime = get(currentTimeAtom);
-				const word = get(wordAtom);
-				return currentTime >= word.startTime && currentTime < word.endTime;
+				return currentTime >= startTime && currentTime < endTime;
 			}),
-		[wordAtom],
+		[startTime, endTime],
 	);
 	const isWordActive = useAtomValue(isWordActiveAtom);
 	const isWordSelected = useAtomValue(isWordSelectedAtom);
@@ -674,15 +751,7 @@ const LyricWorldViewSync: FC<{
 	const showTimestamps = useAtomValue(showTimestampsAtom);
 	const highlightErrors = useAtomValue(highlightErrorsAtom);
 	const highlightActiveWord = useAtomValue(highlightActiveWordAtom);
-	const displayRomanizationInSync = useAtomValue(displayRomanizationInSyncAtom);
 	const toolMode = useAtomValue(toolModeAtom);
-	const isWordBlank = useWordBlank(word.word);
-	const displayWord = useDisplayWord(
-		word.word,
-		isWordBlank,
-		word.romanWord,
-		displayRomanizationInSync,
-	);
 
 	const startTimeRef = useRef<HTMLDivElement>(null);
 	const endTimeRef = useRef<HTMLDivElement>(null);
@@ -707,7 +776,7 @@ const LyricWorldViewSync: FC<{
 		return () => {
 			animation?.cancel();
 		};
-	}, [word.startTime, visualizeTimestampUpdate]);
+	}, [startTime, visualizeTimestampUpdate]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: 用于呈现时间戳更新效果
 	useEffect(() => {
@@ -729,11 +798,11 @@ const LyricWorldViewSync: FC<{
 		return () => {
 			animation?.cancel();
 		};
-	}, [word.endTime, visualizeTimestampUpdate]);
+	}, [endTime, visualizeTimestampUpdate]);
 
 	const hasError = useMemo(
-		() => word.startTime > word.endTime,
-		[word.startTime, word.endTime],
+		() => startTime > endTime,
+		[startTime, endTime],
 	);
 
 	const className = useMemo(
@@ -775,42 +844,91 @@ const LyricWorldViewSync: FC<{
 				});
 				setSelectedWords((state) => {
 					state.clear();
-					state.add(word.id);
+					state.add(syncId);
 				});
 			}}
 		>
 			{showTimestamps && (
 				<div className={classNames(styles.startTime)} ref={startTimeRef}>
-					{msToTimestamp(word.startTime)}
+					{msToTimestamp(startTime)}
 				</div>
 			)}
 			<div className={styles.displayWord}>{displayWord}</div>
 			{showTimestamps && (
 				<div className={classNames(styles.endTime)} ref={endTimeRef}>
-					{msToTimestamp(word.endTime)}
+					{msToTimestamp(endTime)}
 				</div>
 			)}
 		</div>
 	);
 };
 
-const useDisplayWord = (
-	word: string,
-	isWordBlank: boolean,
-	romanWord?: string,
-	displayRomanizationInSync?: boolean,
-) => {
+const LyricWorldViewSync: FC<{
+	wordAtom: Atom<LyricWord>;
+	wordIndex: number;
+	line: LyricLine;
+	lineIndex: number;
+}> = ({ wordAtom, line }) => {
 	const { t } = useTranslation();
-	return useMemo(() => {
-		if (displayRomanizationInSync && romanWord && romanWord.trim() !== "")
-			return romanWord;
-		if (word === "") return t("lyricWordView.empty", "空白");
-		if (isWordBlank)
-			return t("lyricWordView.spaceCount", "空格 x{count}", {
-				count: word.length,
-			});
-		return word;
-	}, [word, isWordBlank, t, romanWord, displayRomanizationInSync]);
+	const word = useAtomValue(wordAtom);
+	const displayRomanizationInSync = useAtomValue(displayRomanizationInSyncAtom);
+	const isWordBlank = useWordBlank(word.word);
+	const getDisplayWord = useCallback(
+		(
+			displayText: string,
+			isBlank: boolean,
+			romanWord?: string,
+			showRomanization?: boolean,
+		) =>
+			getDisplayWordText(
+				t,
+				displayText,
+				isBlank,
+				romanWord,
+				showRomanization,
+			),
+		[t],
+	);
+
+	if (word.ruby && word.ruby.length > 0) {
+		return (
+			<div className={styles.rubySyncRow}>
+				{word.ruby.map((rubyWord, rubyIndex) => {
+					const isRubyBlank =
+						rubyWord.word.length === 0 ||
+						(rubyWord.word.length > 0 &&
+							rubyWord.word.trim().length === 0);
+					return (
+						<LyricSyncWordView
+							key={`${word.id}-ruby-${rubyIndex}`}
+							syncId={buildRubySelectionId(word.id, rubyIndex)}
+							line={line}
+							startTime={rubyWord.startTime}
+							endTime={rubyWord.endTime}
+							displayWord={getDisplayWord(rubyWord.word, isRubyBlank)}
+							isWordBlank={isRubyBlank}
+						/>
+					);
+				})}
+			</div>
+		);
+	}
+
+	return (
+		<LyricSyncWordView
+			syncId={word.id}
+			line={line}
+			startTime={word.startTime}
+			endTime={word.endTime}
+			displayWord={getDisplayWord(
+				word.word,
+				isWordBlank,
+				word.romanWord,
+				displayRomanizationInSync,
+			)}
+			isWordBlank={isWordBlank}
+		/>
+	);
 };
 
 export const LyricWordView: FC<{
@@ -824,6 +942,7 @@ export const LyricWordView: FC<{
 	const layoutMode = useAtomValue(layoutModeAtom);
 
 	const isWordBlank = useWordBlank(word.word);
+	const hasRuby = word.ruby && word.ruby.length > 0;
 
 	return (
 		<div>
@@ -843,7 +962,7 @@ export const LyricWordView: FC<{
 					wordIndex={wordIndex}
 				/>
 			)}
-			{toolMode === ToolMode.Sync && !isWordBlank && (
+			{toolMode === ToolMode.Sync && (hasRuby || !isWordBlank) && (
 				<LyricWorldViewSync
 					wordAtom={wordAtom}
 					line={line}

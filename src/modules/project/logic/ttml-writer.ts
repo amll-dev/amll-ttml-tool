@@ -42,7 +42,38 @@ export default function exportTTMLText(
 
 	const doc = new Document();
 
+	function createRubyWordElement(word: LyricWord): Element {
+		const container = doc.createElement("span");
+		container.setAttribute("tts:ruby", "container");
+		if (word.obscene) container.setAttribute("amll:obscene", "true");
+		if (word.emptyBeat)
+			container.setAttribute("amll:empty-beat", `${word.emptyBeat}`);
+		const base = doc.createElement("span");
+		base.setAttribute("tts:ruby", "base");
+		base.appendChild(doc.createTextNode(word.word));
+		container.appendChild(base);
+		const textContainer = doc.createElement("span");
+		textContainer.setAttribute("tts:ruby", "textContainer");
+		for (const rubyWord of word.ruby ?? []) {
+			const rubySpan = doc.createElement("span");
+			rubySpan.setAttribute("tts:ruby", "text");
+			rubySpan.setAttribute("begin", msToTimestamp(rubyWord.startTime));
+			rubySpan.setAttribute("end", msToTimestamp(rubyWord.endTime));
+			rubySpan.appendChild(doc.createTextNode(rubyWord.word));
+			textContainer.appendChild(rubySpan);
+		}
+		container.appendChild(textContainer);
+		return container;
+	}
+
+	function hasRuby(word: LyricWord): boolean {
+		return Array.isArray(word.ruby) && word.ruby.length > 0;
+	}
+
 	function createWordElement(word: LyricWord): Element {
+		if (Array.isArray(word.ruby) && word.ruby.length > 0) {
+			return createRubyWordElement(word);
+		}
 		const span = doc.createElement("span");
 		span.setAttribute("begin", msToTimestamp(word.startTime));
 		span.setAttribute("end", msToTimestamp(word.endTime));
@@ -51,6 +82,46 @@ export default function exportTTMLText(
 			span.setAttribute("amll:empty-beat", `${word.emptyBeat}`);
 		span.appendChild(doc.createTextNode(word.word));
 		return span;
+	}
+
+	function findFirstTextNode(node: Node): Text | null {
+		if (node.nodeType === Node.TEXT_NODE) return node as Text;
+		for (const child of Array.from(node.childNodes)) {
+			const found = findFirstTextNode(child);
+			if (found) return found;
+		}
+		return null;
+	}
+
+	function findLastTextNode(node: Node): Text | null {
+		if (node.nodeType === Node.TEXT_NODE) return node as Text;
+		const children = Array.from(node.childNodes);
+		for (let i = children.length - 1; i >= 0; i--) {
+			const found = findLastTextNode(children[i]);
+			if (found) return found;
+		}
+		return null;
+	}
+
+	function addWrapperToElement(
+		el: Element,
+		prefix: string,
+		suffix: string,
+	) {
+		if (!prefix && !suffix) return;
+		const first = findFirstTextNode(el);
+		const last = findLastTextNode(el);
+		if (!first) return;
+		if (first === last) {
+			first.nodeValue = `${prefix}${first.nodeValue ?? ""}${suffix}`;
+			return;
+		}
+		if (prefix) {
+			first.nodeValue = `${prefix}${first.nodeValue ?? ""}`;
+		}
+		if (last && suffix) {
+			last.nodeValue = `${last.nodeValue ?? ""}${suffix}`;
+		}
 	}
 
 	function createRomanizationSpan(word: LyricWord): Element {
@@ -65,6 +136,7 @@ export default function exportTTMLText(
 
 	ttRoot.setAttribute("xmlns", "http://www.w3.org/ns/ttml");
 	ttRoot.setAttribute("xmlns:ttm", "http://www.w3.org/ns/ttml#metadata");
+	ttRoot.setAttribute("xmlns:tts", "http://www.w3.org/ns/ttml#styling");
 	ttRoot.setAttribute("xmlns:amll", "http://www.example.com/ns/amll");
 	ttRoot.setAttribute(
 		"xmlns:itunes",
@@ -195,7 +267,7 @@ export default function exportTTMLText(
 				let beginTime = Number.POSITIVE_INFINITY;
 				let endTime = 0;
 				for (const word of line.words) {
-					if (word.word.trim().length === 0) {
+					if (word.word.trim().length === 0 && !hasRuby(word)) {
 						lineP.appendChild(doc.createTextNode(word.word));
 					} else {
 						const span = createWordElement(word);
@@ -208,7 +280,11 @@ export default function exportTTMLText(
 				lineP.setAttribute("end", msToTimestamp(line.endTime));
 			} else {
 				const word = line.words[0];
-				lineP.appendChild(doc.createTextNode(word.word));
+				if (word.word.trim().length === 0 && !hasRuby(word)) {
+					lineP.appendChild(doc.createTextNode(word.word));
+				} else {
+					lineP.appendChild(createWordElement(word));
+				}
 				lineP.setAttribute("begin", msToTimestamp(word.startTime));
 				lineP.setAttribute("end", msToTimestamp(word.endTime));
 			}
@@ -239,17 +315,14 @@ export default function exportTTMLText(
 						wordIndex++
 					) {
 						const word = bgLine.words[wordIndex];
-						if (word.word.trim().length === 0) {
+						if (word.word.trim().length === 0 && !hasRuby(word)) {
 							bgLineSpan.appendChild(doc.createTextNode(word.word));
 						} else {
 							const span = createWordElement(word);
 
-							if (wordIndex === firstWordIndex && span.firstChild) {
-								span.firstChild.nodeValue = `(${span.firstChild.nodeValue}`;
-							}
-							if (wordIndex === lastWordIndex && span.firstChild) {
-								span.firstChild.nodeValue = `${span.firstChild.nodeValue})`;
-							}
+							const prefix = wordIndex === firstWordIndex ? "(" : "";
+							const suffix = wordIndex === lastWordIndex ? ")" : "";
+							addWrapperToElement(span, prefix, suffix);
 
 							bgLineSpan.appendChild(span);
 							beginTime = Math.min(beginTime, word.startTime);
@@ -260,7 +333,13 @@ export default function exportTTMLText(
 					bgLineSpan.setAttribute("end", msToTimestamp(endTime));
 				} else {
 					const word = bgLine.words[0];
-					bgLineSpan.appendChild(doc.createTextNode(`(${word.word})`));
+					if (word.word.trim().length === 0 && !hasRuby(word)) {
+						bgLineSpan.appendChild(doc.createTextNode(`(${word.word})`));
+					} else {
+						const span = createWordElement(word);
+						addWrapperToElement(span, "(", ")");
+						bgLineSpan.appendChild(span);
+					}
 					bgLineSpan.setAttribute("begin", msToTimestamp(word.startTime));
 					bgLineSpan.setAttribute("end", msToTimestamp(word.endTime));
 				}

@@ -26,12 +26,20 @@ export interface TTMLLyric {
 	lyricLines: LyricLine[];
 }
 
+export interface LyricWordBase {
+	startTime: number;
+	endTime: number;
+	word: string;
+	emptyBeat?: number;
+}
+
 export interface LyricWord extends AMLLLyricWord {
 	// 用来确定唯一一个单词的标识符，导出时不会保存
 	id: string;
 	obscene: boolean;
 	emptyBeat: number;
 	romanWarning?: boolean;
+	ruby?: LyricWordBase[];
 }
 
 export const newLyricWord = (): LyricWord => ({

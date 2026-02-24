@@ -65,6 +65,18 @@ import LyricWordView from "./lyric-word-view.tsx";
 import { RomanWordView } from "./roman-word-view.tsx";
 
 const isDraggingAtom = atom(false);
+const parseRubyShortcut = (value: string) => {
+	if (value.endsWith("|")) {
+		return {
+			word: value.slice(0, -1),
+			enableRuby: true,
+		};
+	}
+	return {
+		word: value,
+		enableRuby: false,
+	};
+};
 
 // 定义一个派生 Atom，用于计算每一行的显示行号
 const lineDisplayNumbersAtom = atom((get) => {
@@ -419,6 +431,7 @@ export const LyricLineView: FC<{
 				});
 				return;
 			}
+			const nextLine = lyricLines.lyricLines[lineIndex + 1];
 			if (!nextLine) return;
 			originalEndTimeRef.current = line.endTime;
 			originalNextStartTimeRef.current = nextLine?.startTime ?? null;
@@ -446,7 +459,9 @@ export const LyricLineView: FC<{
 		[
 			editLyricLines,
 			endTimeLinked,
+			line.endTime,
 			lineIndex,
+			lyricLines,
 		],
 	);
 
@@ -734,10 +749,14 @@ export const LyricLineView: FC<{
 												if (evt.key === "Enter") {
 													evt.preventDefault();
 													evt.stopPropagation();
+													const { word, enableRuby } = parseRubyShortcut(
+														evt.currentTarget.value,
+													);
 													editLyricLines((state) => {
 														state.lyricLines[lineIndex].words.push({
 															...newLyricWord(),
-															word: evt.currentTarget.value,
+															word,
+															ruby: enableRuby ? [] : undefined,
 														});
 													});
 													evt.currentTarget.value = "";
