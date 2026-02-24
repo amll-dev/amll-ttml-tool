@@ -207,7 +207,7 @@ export const RubyEditor = ({
 
 	const ignoreBlurRef = useRef(false);
 
-	if (!forceShow && rubyWords.length === 0) return null;
+	if (!forceShow && word.ruby === undefined) return null;
 
 	return (
 		<span className={classNames(styles.rubyEditor, className)}>
