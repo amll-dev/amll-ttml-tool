@@ -753,10 +753,19 @@ export const LyricLineView: FC<{
 														evt.currentTarget.value,
 													);
 													editLyricLines((state) => {
+														const newWord = newLyricWord();
 														state.lyricLines[lineIndex].words.push({
-															...newLyricWord(),
+															...newWord,
 															word,
-															ruby: enableRuby ? [] : undefined,
+															ruby: enableRuby
+																? [
+																		{
+																			word: "",
+																			startTime: newWord.startTime,
+																			endTime: newWord.endTime,
+																		},
+																	]
+																: undefined,
 														});
 													});
 													evt.currentTarget.value = "";

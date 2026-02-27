@@ -325,10 +325,13 @@ export const SyncKeyBinding: FC = () => {
 			}
 			store.set(smartFirstWordActiveIdAtom, null);
 
-			const emptyBeat = store.get(currentEmptyBeatAtom);
-			if (emptyBeat < location.word.emptyBeat) {
-				store.set(currentEmptyBeatAtom, emptyBeat + 1);
-				return;
+			const hasRuby = location.word.ruby?.length;
+			if (!hasRuby) {
+				const emptyBeat = store.get(currentEmptyBeatAtom);
+				if (emptyBeat < location.word.emptyBeat) {
+					store.set(currentEmptyBeatAtom, emptyBeat + 1);
+					return;
+				}
 			}
 
 			// 智能尾字

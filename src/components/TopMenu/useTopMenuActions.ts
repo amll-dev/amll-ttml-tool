@@ -8,12 +8,13 @@ import { uid } from "uid";
 import { useFileOpener } from "$/hooks/useFileOpener.ts";
 import exportTTMLText from "$/modules/project/logic/ttml-writer";
 import { applyRomanizationWarnings } from "$/modules/segmentation/utils/Transliteration/roman-warning";
+import { predictLineRomanization } from "$/modules/segmentation/utils/Transliteration/distributor";
 import { segmentLyricLines } from "$/modules/segmentation/utils/segmentation";
 import { useSegmentationConfig } from "$/modules/segmentation/utils/useSegmentationConfig";
+import { applyGeneratedRuby } from "$/modules/lyric-editor/utils/ruby-generator";
 import {
 	advancedSegmentationDialogAtom,
 	confirmDialogAtom,
-	distributeRomanizationDialogAtom,
 	historyRestoreDialogAtom,
 	latencyTestDialogAtom,
 	metadataEditorDialogAtom,
@@ -64,9 +65,6 @@ export const useTopMenuActions = () => {
 	const setTimeShiftDialog = useSetAtom(timeShiftDialogAtom);
 	const { openFile } = useFileOpener();
 	const setProjectId = useSetAtom(projectIdAtom);
-	const setDistributeRomanizationDialog = useSetAtom(
-		distributeRomanizationDialogAtom,
-	);
 	const { config: segmentationConfig } = useSegmentationConfig();
 	const newFileKey = useAtomValue(keyNewFileAtom);
 	const openFileKey = useAtomValue(keyOpenFileAtom);
@@ -329,8 +327,27 @@ export const useTopMenuActions = () => {
 	}, [editLyricLines, setConfirmDialog, t]);
 
 	const onOpenDistributeRomanization = useCallback(() => {
-		setDistributeRomanizationDialog(true);
-	}, [setDistributeRomanizationDialog]);
+		const selectedLines = store.get(selectedLinesAtom);
+		const hasSelection = selectedLines.size > 0;
+		editLyricLines((draft) => {
+			draft.lyricLines.forEach((line) => {
+				if (hasSelection && !selectedLines.has(line.id)) return;
+				const fullRoman = line.romanLyric || "";
+				if (line.words.length === 0 || fullRoman.trim() === "") return;
+				try {
+					const results = predictLineRomanization(line.words, fullRoman);
+					line.words.forEach((word, wordIndex) => {
+						if (!results[wordIndex]) return;
+						word.romanWord = results[wordIndex];
+						applyGeneratedRuby(word);
+					});
+					applyRomanizationWarnings(line.words);
+				} catch (e) {
+					error("Failed to distribute romanization", e);
+				}
+			});
+		});
+	}, [editLyricLines, store]);
 
 	const onCheckRomanizationWarnings = useCallback(() => {
 		editLyricLines((draft) => {

@@ -217,7 +217,16 @@ ${comment}
 			);
 		}
 		setProcessing(false);
-	}, [store, name, submitReason, comment, setDialogOpen, t]);
+	}, [
+		store,
+		name,
+		submitReason,
+		comment,
+		setDialogOpen,
+		t,
+		metadatas,
+		processing,
+	]);
 
 	useLayoutEffect(() => {
 		if (genNameFromMetadata) {

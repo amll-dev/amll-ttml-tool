@@ -189,7 +189,7 @@ function EditField<
 					}
 					return state;
 				});
-			} catch (err) {
+			} catch (_err) {
 				if (typeof currentValue === "string") setFieldInput(currentValue);
 			}
 		},

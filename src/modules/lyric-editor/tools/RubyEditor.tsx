@@ -181,6 +181,47 @@ export const RubyEditor = ({
 		[editLyricLines, store, wordAtom],
 	);
 
+	const mergeRubyWithPrevious = useCallback(
+		(index: number) => {
+			const currentWord = store.get(wordAtom);
+			const prevText = currentWord.ruby?.[index - 1]?.word ?? "";
+			const currentText = currentWord.ruby?.[index]?.word ?? "";
+			const mergedText = `${prevText}${currentText}`;
+
+			editLyricLines((state) => {
+				for (const line of state.lyricLines) {
+					for (const word of line.words) {
+						if (word.id !== currentWord.id) continue;
+						if (!word.ruby || !word.ruby[index] || !word.ruby[index - 1])
+							return;
+						const prevRuby = word.ruby[index - 1];
+						const currentRuby = word.ruby[index];
+						prevRuby.word = mergedText;
+						prevRuby.startTime = Math.min(
+							prevRuby.startTime,
+							currentRuby.startTime,
+						);
+						prevRuby.endTime = Math.max(
+							prevRuby.endTime,
+							currentRuby.endTime,
+						);
+						word.ruby.splice(index, 1);
+						break;
+					}
+				}
+			});
+
+			requestAnimationFrame(() => {
+				const target = inputRefs.current[index - 1];
+				if (target) {
+					target.focus();
+					target.setSelectionRange(mergedText.length, mergedText.length);
+				}
+			});
+		},
+		[editLyricLines, store, wordAtom],
+	);
+
 	const applyRubyToAllSameWords = useCallback(() => {
 		const currentWord = store.get(wordAtom);
 		const rubySegments = currentWord.ruby?.map((ruby) => ruby.word) ?? [];
@@ -237,6 +278,14 @@ export const RubyEditor = ({
 							return;
 						}
 						if (evt.key !== "Backspace") return;
+						const selectionStart = evt.currentTarget.selectionStart ?? 0;
+						const selectionEnd = evt.currentTarget.selectionEnd ?? 0;
+						const isAtStart = selectionStart === 0 && selectionEnd === 0;
+						if (isAtStart && index > 0) {
+							evt.preventDefault();
+							mergeRubyWithPrevious(index);
+							return;
+						}
 						if (evt.currentTarget.value !== "") return;
 						evt.preventDefault();
 						removeRubyWord(index);
