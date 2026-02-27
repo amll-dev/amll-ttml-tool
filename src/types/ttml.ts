@@ -36,6 +36,9 @@ export interface LyricWordBase {
 export interface LyricWord extends AMLLLyricWord {
 	// 用来确定唯一一个单词的标识符，导出时不会保存
 	id: string;
+	startTime: number;
+	endTime: number;
+	word: string;
 	obscene: boolean;
 	emptyBeat: number;
 	romanWarning?: boolean;
@@ -60,8 +63,8 @@ export interface LyricLine extends AMLLLyricLine {
 	// romanLyric: string;
 	// isBG: boolean;
 	// isDuet: boolean;
-	// startTime: number;
-	// endTime: number;
+	startTime: number;
+	endTime: number;
 	ignoreSync: boolean;
 	/**
 	 * @description 用于记录时间链接前的原始时间值，便于取消链接时恢复

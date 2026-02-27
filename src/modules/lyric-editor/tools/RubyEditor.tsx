@@ -195,7 +195,7 @@ export const RubyEditor = ({
 		});
 	}, [editLyricLines, segmentationConfig, store, wordAtom]);
 
-	if (!forceShow && word.ruby === undefined) return null;
+	if (!forceShow && rubyWords.length === 0) return null;
 
 	return (
 		<>
