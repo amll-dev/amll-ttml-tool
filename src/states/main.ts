@@ -50,6 +50,8 @@ export const lyricLinesAtom = atom({
  */
 export const projectIdAtom = atom(uid());
 
+export const rubyWarningShownProjectIdsAtom = atom(new Set<string>());
+
 /**
  * @description 当前项目的显示身份信息，主要用于在 UI 上显示项目名称
  * @readonly
