@@ -179,6 +179,7 @@
 			"tool": "Værktøjer",
 			"segmentationTools": "Segmenteringsværktøjer",
 			"autoSegment": "Auto-segmentering",
+			"rubySegment": "Ruby Segmentating",
 			"advancedSegment": "Avanceret segmentering...",
 			"syncLineTimestamps": "Synkroniser linjetidsstempler",
 			"distributeRomanization": "Distribuer romanisering...",

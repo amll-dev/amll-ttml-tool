@@ -179,6 +179,7 @@
 			"tool": "Nástroje",
 			"segmentationTools": "Nástroje segmentace",
 			"autoSegment": "Automatická segmentace",
+			"rubySegment": "Ruby Segmentation",
 			"advancedSegment": "Pokročilá segmentace...",
 			"syncLineTimestamps": "Synchronizovat časové značky řádků",
 			"distributeRomanization": "Distribuovat romanizaci...",

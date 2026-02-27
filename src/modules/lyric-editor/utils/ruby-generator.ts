@@ -41,7 +41,8 @@ const EXCLUDED_KANA_COMBOS = new Set([
 	"みょ",
 	"りゃ",
 	"りゅ",
-	"りょ"
+	"りょ",
+	"じょ"
 ]);
 
 const buildRubyEntries = (

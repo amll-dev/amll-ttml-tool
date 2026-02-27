@@ -24,6 +24,9 @@ const ToolMenuItems = () => {
 					<DropdownMenu.Item onSelect={menu.onAutoSegment}>
 						{t("topBar.menu.autoSegment", "自动分词")}
 					</DropdownMenu.Item>
+					<DropdownMenu.Item onSelect={menu.onRubySegment}>
+						{t("topBar.menu.rubySegment", "注音分词")}
+					</DropdownMenu.Item>
 					<DropdownMenu.Item onSelect={menu.onOpenAdvancedSegmentation}>
 						{t("topBar.menu.advancedSegment", "高级分词...")}
 					</DropdownMenu.Item>

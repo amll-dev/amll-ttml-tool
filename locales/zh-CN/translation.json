@@ -194,6 +194,7 @@
 			"tool": "工具",
 			"segmentationTools": "分词",
 			"autoSegment": "一键分词",
+			"rubySegment": "注音分词",
 			"advancedSegment": "高级分词...",
 			"syncLineTimestamps": "同步行时间戳",
 			"perWordRomanization": 

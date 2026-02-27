@@ -194,6 +194,7 @@
 			"tool": "Tools",
 			"segmentationTools": "Segmentation Tools",
 			"autoSegment": "Auto Segment",
+			"rubySegment": "Ruby Segmentation",
 			"advancedSegment": "Advanced Segment...",
 			"syncLineTimestamps": "Sync Line Timestamps",
 			"perWordRomanization":
