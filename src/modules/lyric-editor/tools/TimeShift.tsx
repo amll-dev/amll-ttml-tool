@@ -110,6 +110,18 @@ export const TimeShiftDialog = () => {
 					line.words.forEach((word) => {
 						word.startTime = Math.max(0, word.startTime + finalOffset);
 						word.endTime = Math.max(0, word.endTime + finalOffset);
+						if (word.ruby && word.ruby.length > 0) {
+							word.ruby.forEach((rubyWord) => {
+								rubyWord.startTime = Math.max(
+									0,
+									rubyWord.startTime + finalOffset,
+								);
+								rubyWord.endTime = Math.max(
+									0,
+									rubyWord.endTime + finalOffset,
+								);
+							});
+						}
 					});
 				}
 			});
