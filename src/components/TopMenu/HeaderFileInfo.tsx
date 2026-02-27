@@ -28,7 +28,7 @@ export const HeaderFileInfo = () => {
 			value.toLowerCase().endsWith(suffix)
 				? value.slice(0, -suffix.length)
 				: value,
-		[suffix],
+		[],
 	);
 
 	const finishEditing = useCallback(
@@ -43,7 +43,7 @@ export const HeaderFileInfo = () => {
 			}
 			setIsEditing(false);
 		},
-		[draftName, filename, getBaseName, setFilename, suffix],
+		[draftName, filename, getBaseName, setFilename],
 	);
 
 	useEffect(() => {
