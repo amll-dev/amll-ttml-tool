@@ -230,9 +230,14 @@ function EditField<
 									if (!selectedItems.has(word.id)) continue;
 									const nextWord = line.words[wordIndex + 1];
 									const nextStartTime = nextWord?.startTime;
+									const originalEndTime = word.endTime;
 									const newEndTimeRaw = isDelta ? word.endTime + parsedValue : word.startTime + parsedValue;
 									const newEndTime = Math.max(word.startTime, newEndTimeRaw);
 									word.endTime = newEndTime;
+									if (isDelta && nextWord && originalEndTime === nextStartTime) {
+										nextWord.startTime = newEndTime;
+										nextWord.endTime = Math.max(nextWord.startTime, nextWord.endTime);
+									}
 								}
 							} else if (selectedItems.has(line.id)) {
 								const newEndTimeRaw = isDelta ? line.endTime + parsedValue : line.startTime + parsedValue;
