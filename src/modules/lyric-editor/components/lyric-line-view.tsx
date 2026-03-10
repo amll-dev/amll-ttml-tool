@@ -53,6 +53,7 @@ import {
 	lyricLinesAtom,
 	selectedLinesAtom,
 	selectedWordsAtom,
+	showEndTimeAsDurationAtom,
 	ToolMode,
 	toolModeAtom,
 } from "$/states/main.ts";
@@ -273,6 +274,7 @@ export const LyricLineView: FC<{
 	const lyricLines = useAtomValue(lyricLinesAtom);
 	const visualizeTimestampUpdate = useAtomValue(visualizeTimestampUpdateAtom);
 	const showTimestamps = useAtomValue(showTimestampsAtom);
+	const showEndTimeAsDuration = useAtomValue(showEndTimeAsDurationAtom);
 	const toolMode = useAtomValue(toolModeAtom);
 	const store = useStore();
 	const wordsContainerRef = useRef<HTMLDivElement>(null);
@@ -813,18 +815,30 @@ export const LyricLineView: FC<{
 									<div className={styles.startTime} ref={startTimeRef}>
 										{msToTimestamp(line.startTime)}
 									</div>
-									<button
-										type="button"
-										className={classNames(styles.endTime, styles.endTimeButton)}
-										ref={endTimeRef}
-										onClick={onToggleEndTimeLink}
-									>
-										{endTimeLinked ? (
-											<LinkMultiple20Regular />
-										) : (
-											msToTimestamp(line.endTime)
-										)}
-									</button>
+										<button
+											type="button"
+											className={classNames(
+												styles.endTime,
+												styles.endTimeButton,
+											)}
+											ref={endTimeRef}
+											onClick={onToggleEndTimeLink}
+										>
+											<span
+												style={{
+													display: "inline-flex",
+													alignItems: "center",
+												}}
+											>
+												{endTimeLinked ? (
+													<LinkMultiple20Regular />
+												) : showEndTimeAsDuration ? (
+													`+${line.endTime - line.startTime}ms`
+												) : (
+													msToTimestamp(line.endTime)
+												)}
+											</span>
+										</button>
 								</Flex>
 							)}
 						</div>

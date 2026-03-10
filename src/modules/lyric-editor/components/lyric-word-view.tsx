@@ -51,6 +51,7 @@ import {
 	lyricLinesAtom,
 	selectedLinesAtom,
 	selectedWordsAtom,
+	showEndTimeAsDurationAtom,
 	ToolMode,
 	toolModeAtom,
 } from "$/states/main.ts";
@@ -749,6 +750,7 @@ const LyricSyncWordView: FC<{
 	const setSelectedLines = useSetImmerAtom(selectedLinesAtom);
 	const visualizeTimestampUpdate = useAtomValue(visualizeTimestampUpdateAtom);
 	const showTimestamps = useAtomValue(showTimestampsAtom);
+	const showEndTimeAsDuration = useAtomValue(showEndTimeAsDurationAtom);
 	const highlightErrors = useAtomValue(highlightErrorsAtom);
 	const highlightActiveWord = useAtomValue(highlightActiveWordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
@@ -856,7 +858,9 @@ const LyricSyncWordView: FC<{
 			<div className={styles.displayWord}>{displayWord}</div>
 			{showTimestamps && (
 				<div className={classNames(styles.endTime)} ref={endTimeRef}>
-					{msToTimestamp(endTime)}
+					{showEndTimeAsDuration
+						? `+${endTime - startTime}ms`
+						: msToTimestamp(endTime)}
 				</div>
 			)}
 		</div>
