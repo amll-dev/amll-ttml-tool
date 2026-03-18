@@ -15,6 +15,7 @@ export const SUPPORTED_LANGUAGES = [
 	{ label: "Deutsch (German)", value: "de" },
 	{ label: "Français (French)", value: "fr" },
 	{ label: "Español (Spanish)", value: "es" },
+	{ label: "Bahasa Indonesia (Indonesian)", value: "id" },
 	{ label: "Italiano (Italian)", value: "it" },
 	{ label: "Português (Portuguese)", value: "pt" },
 	{ label: "Pусский (Russian)", value: "ru" },
@@ -54,6 +55,9 @@ export async function loadHyphenator(
 				break;
 			case "es":
 				module = await import("hyphen/es");
+				break;
+			case "id":
+				module = await import("hyphen/id");
 				break;
 			case "it":
 				module = await import("hyphen/it");
