@@ -197,8 +197,7 @@
 			"rubySegment": "注音分词",
 			"advancedSegment": "高级分词...",
 			"syncLineTimestamps": "同步行时间戳",
-			"perWordRomanization": 
-			{
+			"perWordRomanization": {
 				"index": "逐字音译",
 				"check": "检查逐字音译一致性",
 				"distribute": "自动分配罗马音...",
@@ -330,6 +329,25 @@
 		},
 		"error": {
 			"workerError": "处理音频时出错"
+		}
+	},
+	"latencyTestDialog": {
+		"title": "打轴延迟测试",
+		"description": "请选择自己喜欢的 BPM，并在每个蜂鸣声响起时按下打轴按键，以测量音频/输入延迟差",
+		"latencyDisplay": {
+			"fastest": "最快延迟",
+			"current": {
+				"none": "未测量",
+				"fast": "快",
+				"slow": "慢",
+				"perfect": "完美"
+			},
+			"slowest": "最慢延迟"
+		},
+		"bpmInputLabel": "节拍 BPM",
+		"button": {
+			"start": "开始",
+			"stop": "结束"
 		}
 	},
 	"lrclib": {
