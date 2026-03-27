@@ -83,6 +83,7 @@
 			"assistSettings": "Assistant Settings",
 			"showTimestampUpdate": "Show Timestamp Updates",
 			"touchSyncPanel": "Touch Sync Panel",
+			"bgLyricIgnoreSync": "Ignore Background Vocals",
 			"displayOptions": "Display Options",
 			"showTimestamps": "Show Timestamps",
 			"highlightActiveWord": "Highlight Active Word",
@@ -197,8 +198,7 @@
 			"rubySegment": "Ruby Segmentation",
 			"advancedSegment": "Advanced Segment...",
 			"syncLineTimestamps": "Sync Line Timestamps",
-			"perWordRomanization":
-			{
+			"perWordRomanization": {
 				"index": "Per-Word Romanization",
 				"check": "Check Per-Word Romanization",
 				"distribute": "Distribute Romanization...",
@@ -232,7 +232,8 @@
 			"saving": "Saving...",
 			"pending": "Saving...",
 			"savedAt": "Last saved at",
-			"saved": "Saved"
+			"saved": "Saved",
+			"autoSavedAt": "Autosaved at {time}"
 		},
 		"popover": {
 			"filename": "File Name",
