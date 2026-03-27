@@ -333,6 +333,25 @@
 			"workerError": "Error processing audio"
 		}
 	},
+	"latencyTestDialog": {
+		"title": "Timing Offset Latency Test",
+		"description": "Choose your preferred BPM, then press the {key} key on each beep to measure the audio and input latency.",
+		"latencyDisplay": {
+			"fastest": "Fastest",
+			"current": {
+				"none": "Not Measured",
+				"fast": "Early",
+				"slow": "Late",
+				"perfect": "Perfect"
+			},
+			"slowest": "Slowest"
+		},
+		"bpmInputLabel": "Tempo (BPM)",
+		"button": {
+			"start": "Start",
+			"stop": "Stop"
+		}
+	},
 	"lrclib": {
 		"searchError": "Search failed, please check network or try again later",
 		"importError": "Error occurred while importing lyrics",
