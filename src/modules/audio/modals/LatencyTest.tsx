@@ -1,6 +1,8 @@
 import { Button, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
 import { useAtom, useAtomValue } from "jotai";
 import { memo, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { KeyBinding } from "$/components/KeyBinding";
 import { audioEngine } from "$/modules/audio/audio-engine";
 import {
 	latencyTestBPMAtom,
@@ -10,8 +12,6 @@ import {
 import { latencyTestDialogAtom } from "$/states/dialogs.ts";
 import { keySyncNextAtom } from "$/states/keybindings";
 import { useKeyBindingAtom } from "$/utils/keybindings";
-import { useTranslation } from "react-i18next";
-import { KeyBinding } from "$/components/KeyBinding";
 
 const BeepVisualizer = ({ enable }: { enable: boolean }) => {
 	return (
@@ -209,7 +209,7 @@ export const LatencyTestDialog = memo(() => {
 					<Text>
 						{t(
 							"latencyTestDialog.description",
-							"请选择自己喜欢的 BPM，并在每个蜂鸣声响起时按下打轴按键，以测量音频/输入延迟差",
+							"请选择自己喜欢的 BPM，并在每个蜂鸣声响起时按下 {key} 键，以测量音频/输入延迟差",
 							{
 								key: <KeyBinding kbdAtom={keySyncNextAtom} />,
 							},
