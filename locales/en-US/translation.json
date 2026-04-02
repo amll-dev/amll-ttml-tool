@@ -83,6 +83,7 @@
 			"assistSettings": "Assistant Settings",
 			"showTimestampUpdate": "Show Timestamp Updates",
 			"touchSyncPanel": "Touch Sync Panel",
+			"quickFixes": "Quick Fixes",
 			"bgLyricIgnoreSync": "Ignore Background Vocals",
 			"displayOptions": "Display Options",
 			"showTimestamps": "Show Timestamps",
@@ -400,7 +401,9 @@
 	},
 	"lyricWordView": {
 		"empty": "Empty",
-		"spaceCount": "Space x{count}"
+		"spaceCount": "Space x{count}",
+		"editingWordTitle": "Editing Word",
+		"editingWordDesc": "Edit the word or apply suggested quick fixes."
 	},
 	"touchSyncPanel": {
 		"prevWord": "Jump Previous Word",

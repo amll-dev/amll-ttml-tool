@@ -29,8 +29,8 @@ import {
 	displayRomanizationInSyncAtom,
 	highlightActiveWordAtom,
 	highlightErrorsAtom,
-	highlightGrammarWarningsAtom,
-	ignoredGrammarWordsAtom,
+	quickFixesAtom,
+	ignoredQuickFixWordsAtom,
 	showTimestampsAtom,
 	showWordRomanizationInputAtom,
 } from "$/modules/settings/states/index.ts";
@@ -85,13 +85,12 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 		);
 		const [showTimestamps, setShowTimestamps] = useAtom(showTimestampsAtom);
 		const [highlightErrors, setHighlightErrors] = useAtom(highlightErrorsAtom);
-		const [highlightGrammarWarnings, setHighlightGrammarWarnings] = useAtom(
-			highlightGrammarWarningsAtom,
+		const [quickFixes, setQuickFixes] = useAtom(quickFixesAtom);
+		const [ignoredQuickFixWords, setIgnoredQuickFixWords] = useAtom(
+			ignoredQuickFixWordsAtom,
 		);
-		const [ignoredGrammarWords, setIgnoredGrammarWords] = useAtom(
-			ignoredGrammarWordsAtom,
-		);
-		const [isGrammarDialogOpen, setIsGrammarDialogOpen] = useState(false);
+		const [isQuickFixExclusionsDialogOpen, setIsQuickFixExclusionsDialogOpen] =
+			useState(false);
 		const [newWord, setNewWord] = useState("");
 		const [highlightActiveWord, setHighlightActiveWord] = useAtom(
 			highlightActiveWordAtom,
@@ -193,6 +192,22 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 									});
 								}}
 							/>
+							<Flex align="center" gap="1">
+								<Text wrap="nowrap" size="1">
+									{t("ribbonBar.syncMode.quickFixes", "Quick Fixes")}
+								</Text>
+								<IconButton
+									size="1"
+									variant="ghost"
+									onClick={() => setIsQuickFixExclusionsDialogOpen(true)}
+								>
+									<MoreHorizontalRegular />
+								</IconButton>
+							</Flex>
+							<Checkbox
+								checked={quickFixes}
+								onCheckedChange={(v) => setQuickFixes(!!v)}
+							/>
 						</Grid>
 					</RibbonSection>
 					<RibbonSection
@@ -226,25 +241,7 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 								checked={highlightErrors}
 								onCheckedChange={(v) => setHighlightErrors(!!v)}
 							/>
-							<Flex align="center" gap="1">
-								<Text wrap="nowrap" size="1">
-									{t(
-										"ribbonBar.syncMode.highlightGrammarWarnings",
-										"Highlight Grammar Warnings",
-									)}
-								</Text>
-								<IconButton
-									size="1"
-									variant="ghost"
-									onClick={() => setIsGrammarDialogOpen(true)}
-								>
-									<MoreHorizontalRegular />
-								</IconButton>
-							</Flex>
-							<Checkbox
-								checked={highlightGrammarWarnings}
-								onCheckedChange={(v) => setHighlightGrammarWarnings(!!v)}
-							/>
+
 							{showWordRomanizationInput && (
 								<>
 									<Text wrap="nowrap" size="1">
@@ -290,13 +287,13 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 					</RibbonSection>
 				</RibbonFrame>
 				<Dialog.Root
-					open={isGrammarDialogOpen}
-					onOpenChange={setIsGrammarDialogOpen}
+					open={isQuickFixExclusionsDialogOpen}
+					onOpenChange={setIsQuickFixExclusionsDialogOpen}
 				>
 					<Dialog.Content>
-						<Dialog.Title>Manage Ignored Grammar Words</Dialog.Title>
+						<Dialog.Title>Manage Quick Fix Exclusions</Dialog.Title>
 						<Dialog.Description>
-							Add words to ignore in grammar warnings.
+							Add words to ignore in quick fixes.
 						</Dialog.Description>
 						<Flex direction="column" gap="3">
 							<TextField.Root
@@ -305,20 +302,20 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 								onChange={(e) => setNewWord(e.target.value)}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" && newWord.trim()) {
-										setIgnoredGrammarWords((prev) => [...prev, newWord.trim()]);
+										setIgnoredQuickFixWords((prev) => [...prev, newWord.trim()]);
 										setNewWord("");
 									}
 								}}
 							/>
 							<Flex direction="column" gap="2">
-								{ignoredGrammarWords.map((word, index) => (
+								{ignoredQuickFixWords.map((word, index) => (
 									<Flex key={word} align="center" justify="between">
 										<Text>{word}</Text>
 										<IconButton
 											size="1"
 											variant="ghost"
 											onClick={() =>
-												setIgnoredGrammarWords((prev) =>
+												setIgnoredQuickFixWords((prev) =>
 													prev.filter((_, i) => i !== index),
 												)
 											}

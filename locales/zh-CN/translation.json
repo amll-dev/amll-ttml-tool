@@ -83,6 +83,7 @@
 			"assistSettings": "辅助设置",
 			"showTimestampUpdate": "呈现时间戳更新",
 			"touchSyncPanel": "触控打轴辅助面板",
+			"quickFixes": "快速修复",
 			"displayOptions": "显示选项",
 			"showTimestamps": "显示时间戳",
 			"highlightActiveWord": "高亮当前音节",
@@ -398,7 +399,10 @@
 	},
 	"lyricWordView": {
 		"empty": "空白",
-		"spaceCount": "空格 x{count}"
+		"spaceCount": "空格 x{count}",
+		"noSuggestions": "No suggestions",
+		"editingWordTitle": "编辑单词",
+		"editingWordDesc": "编辑此单词或应用建议的快速修复。"
 	},
 	"touchSyncPanel": {
 		"prevWord": "跳上词",

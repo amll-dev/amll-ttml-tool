@@ -62,11 +62,11 @@ export const highlightActiveWordAtom = atomWithStorage(
 );
 
 export const highlightErrorsAtom = atomWithStorage("highlightErrors", false);
-export const highlightGrammarWarningsAtom = atomWithStorage(
+export const quickFixesAtom = atomWithStorage(
 	"highlightGrammarWarnings",
 	false,
 );
-export const ignoredGrammarWordsAtom = atomWithStorage(
+export const ignoredQuickFixWordsAtom = atomWithStorage(
 	"ignoredGrammarWords",
 	[] as string[],
 );

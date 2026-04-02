@@ -49,10 +49,9 @@ import {
 	displayRomanizationInSyncAtom,
 	highlightActiveWordAtom,
 	highlightErrorsAtom,
-	highlightGrammarWarningsAtom,
-	ignoredGrammarWordsAtom,
 	LayoutMode,
 	layoutModeAtom,
+	quickFixesAtom,
 	showTimestampsAtom,
 } from "$/modules/settings/states/index.ts";
 import {
@@ -76,9 +75,7 @@ import { type LyricLine, type LyricWord, newLyricWord } from "$/types/ttml.ts";
 import { msToTimestamp, parseTimespan } from "$/utils/timestamp.ts";
 import { RubyEditor } from "../tools/RubyEditor.tsx";
 import {
-	collectWarningsWithSuggestions,
 	getGrammarSuggestions,
-	isEnglishLine,
 } from "../utils/grammar-warning.ts";
 import { buildRubySelectionId } from "../utils/lyric-states.ts";
 import { normalizeLineTime } from "../utils/normalize-line-time.ts";
@@ -133,7 +130,6 @@ type LyricWordViewEditProps = {
 	wordIndex: number;
 	line: LyricLine;
 	lineIndex: number;
-	grammarWarning?: boolean;
 };
 
 type LyricWordViewEditSpanProps = {
@@ -431,7 +427,6 @@ const LyricWordViewEditAdvance = ({
 	wordIndex,
 	line,
 	lineIndex,
-	grammarWarning,
 }: LyricWordViewEditProps) => {
 	const store = useStore();
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
@@ -441,7 +436,6 @@ const LyricWordViewEditAdvance = ({
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const currentWord = useAtomValue(wordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
-	const highlightGrammarWarnings = useAtomValue(highlightGrammarWarningsAtom);
 	const isWordSelectedAtom = useMemo(
 		() => atom((get) => get(selectedWordsAtom).has(get(wordAtom).id)),
 		[wordAtom],
@@ -469,17 +463,8 @@ const LyricWordViewEditAdvance = ({
 				isWordBlank && styles.blank,
 				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
-				grammarWarning && highlightGrammarWarnings && styles.grammarWarning,
 			),
-		[
-			isWordBlank,
-			isWordSelected,
-			showRubyEditor,
-			hasError,
-			toolMode,
-			grammarWarning,
-			highlightGrammarWarnings,
-		],
+		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
 	);
 
 	return (
@@ -631,7 +616,6 @@ const LyricWorldViewEdit = ({
 	wordIndex,
 	line,
 	lineIndex,
-	grammarWarning,
 }: LyricWordViewEditProps) => {
 	const { t } = useTranslation();
 	const word = useAtomValue(wordAtom);
@@ -645,7 +629,6 @@ const LyricWorldViewEdit = ({
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const [editing, setEditing] = useState(false);
 	const toolMode = useAtomValue(toolModeAtom);
-	const highlightGrammarWarnings = useAtomValue(highlightGrammarWarningsAtom);
 	const isWordBlank = useWordBlank(word.word);
 	const displayWord = getDisplayWordText(t, word.word, isWordBlank);
 	const showRubyEditor = useMemo(() => word.ruby !== undefined, [word.ruby]);
@@ -664,17 +647,8 @@ const LyricWorldViewEdit = ({
 				isWordBlank && styles.blank,
 				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
-				grammarWarning && highlightGrammarWarnings && styles.grammarWarning,
 			),
-		[
-			isWordBlank,
-			isWordSelected,
-			showRubyEditor,
-			hasError,
-			toolMode,
-			grammarWarning,
-			highlightGrammarWarnings,
-		],
+		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
 	);
 	const onEnter = useCallback(
 		(evt: SyntheticEvent<HTMLInputElement>) => {
@@ -767,7 +741,6 @@ const LyricSyncWordView: FC<{
 		currentWord: string;
 		suggestions: string[];
 	} | null) => void;
-	handleWordUpdate: (wordIndex: number, newWord: string) => void;
 	allWordsInLyrics: Set<string>;
 }> = ({
 	syncId,
@@ -778,7 +751,6 @@ const LyricSyncWordView: FC<{
 	isWordBlank,
 	wordIndex,
 	setCorrectionDialog,
-	handleWordUpdate,
 	allWordsInLyrics,
 }) => {
 	const isWordSelectedAtom = useMemo(
@@ -801,27 +773,10 @@ const LyricSyncWordView: FC<{
 	const showTimestamps = useAtomValue(showTimestampsAtom);
 	const showEndTimeAsDuration = useAtomValue(showEndTimeAsDurationAtom);
 	const highlightErrors = useAtomValue(highlightErrorsAtom);
-	const highlightGrammarWarnings = useAtomValue(highlightGrammarWarningsAtom);
-	const ignoredGrammarWords = useAtomValue(ignoredGrammarWordsAtom);
 	const highlightActiveWord = useAtomValue(highlightActiveWordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
-	const grammarLineIsEnglish = useMemo(() => isEnglishLine(line), [line]);
-	const ignoredWordsSet = useMemo(
-		() => new Set(ignoredGrammarWords),
-		[ignoredGrammarWords],
-	);
-	const grammarWarningSet = useMemo(
-		() =>
-			grammarLineIsEnglish
-				? collectWarningsWithSuggestions(
-						line,
-						ignoredWordsSet,
-						allWordsInLyrics,
-					)
-				: new Set<string>(),
-		[line, grammarLineIsEnglish, ignoredWordsSet, allWordsInLyrics],
-	);
-	const hasGrammarWarning = grammarWarningSet.has(syncId);
+	const quickFixes = useAtomValue(quickFixesAtom);
+
 
 	const store = useStore();
 	const enableUpcomingWordHighlight = useAtomValue(
@@ -946,7 +901,7 @@ const LyricSyncWordView: FC<{
 							showTimestamps &&
 							highlightErrors)) &&
 					styles.error,
-				hasGrammarWarning && highlightGrammarWarnings && styles.grammarWarning,
+				/* highlightGrammarWarnings is visually disabled as per user request */
 			),
 		[
 			isWordBlank,
@@ -957,8 +912,6 @@ const LyricSyncWordView: FC<{
 			highlightActiveWord,
 			showTimestamps,
 			highlightErrors,
-			highlightGrammarWarnings,
-			hasGrammarWarning,
 		],
 	);
 
@@ -983,56 +936,26 @@ const LyricSyncWordView: FC<{
 				// Only trigger grammar actions if two clicks happen within 300ms (standard double click)
 				if (clickInterval > 300) return;
 
+				// Only open the dialog if Quick Fixes is enabled
+				if (!quickFixes) return;
+
 				evt.stopPropagation();
 				evt.preventDefault();
 
 				const wordText = line.words[wordIndex]?.word || "";
-				const firstAlphaIndex = wordText.search(/[a-zA-Z]/);
-				const isFirstWordLowercase =
-					wordIndex === 0 &&
-					firstAlphaIndex !== -1 &&
-					wordText[firstAlphaIndex] ===
-						wordText[firstAlphaIndex].toLowerCase();
-
 				const suggestions = getGrammarSuggestions(
 					line,
 					wordIndex,
 					allWordsInLyrics,
 				);
 
-				const hasMisspellWarning =
-					suggestions.length > 0 &&
-					suggestions[0] !==
-						wordText.slice(0, firstAlphaIndex) +
-							wordText[firstAlphaIndex]?.toUpperCase() +
-							wordText.slice(firstAlphaIndex + 1);
-
-				if (isFirstWordLowercase && !hasMisspellWarning) {
-					const capitalized =
-						wordText.slice(0, firstAlphaIndex) +
-						wordText[firstAlphaIndex].toUpperCase() +
-						wordText.slice(firstAlphaIndex + 1);
-					handleWordUpdate(wordIndex, capitalized);
-					return;
-				}
-
-				// Auto-remove trailing punctuation if it's the last word of the line
-				if (wordIndex === line.words.length - 1) {
-					const rawWord = wordText.trim();
-					if (rawWord.endsWith(".") || rawWord.endsWith(",")) {
-						handleWordUpdate(wordIndex, rawWord.slice(0, -1).trim());
-						return;
-					}
-				}
-
-				if (hasGrammarWarning) {
-					setCorrectionDialog({
-						open: true,
-						wordIndex,
-						currentWord: wordText,
-						suggestions,
-					});
-				}
+				// Always open the correction dialog on double-click in Sync mode (Time tab)
+				setCorrectionDialog({
+					open: true,
+					wordIndex: wordIndex,
+					currentWord: wordText,
+					suggestions: suggestions,
+				});
 			}}
 		>
 			<div
@@ -1077,14 +1000,12 @@ const LyricWorldViewSync: FC<{
 		currentWord: string;
 		suggestions: string[];
 	} | null) => void;
-	handleWordUpdate: (wordIndex: number, newWord: string) => void;
 	allWordsInLyrics: Set<string>;
 }> = ({
 	wordAtom,
 	line,
 	wordIndex,
 	setCorrectionDialog,
-	handleWordUpdate,
 	allWordsInLyrics,
 }) => {
 	const { t } = useTranslation();
@@ -1120,7 +1041,6 @@ const LyricWorldViewSync: FC<{
 							isWordBlank={isRubyBlank}
 							wordIndex={wordIndex}
 							setCorrectionDialog={setCorrectionDialog}
-							handleWordUpdate={handleWordUpdate}
 							allWordsInLyrics={allWordsInLyrics}
 						/>
 					);
@@ -1144,7 +1064,6 @@ const LyricWorldViewSync: FC<{
 			isWordBlank={isWordBlank}
 			wordIndex={wordIndex}
 			setCorrectionDialog={setCorrectionDialog}
-			handleWordUpdate={handleWordUpdate}
 			allWordsInLyrics={allWordsInLyrics}
 		/>
 	);
@@ -1160,28 +1079,11 @@ export const LyricWordView: FC<{
 	const word = useAtomValue(wordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
 	const layoutMode = useAtomValue(layoutModeAtom);
-	const ignoredGrammarWords = useAtomValue(ignoredGrammarWordsAtom);
+
 
 	const isWordBlank = useWordBlank(word.word);
 	const hasRuby = word.ruby && word.ruby.length > 0;
-	const lineIsEnglish = useMemo(() => isEnglishLine(line), [line]);
-	const ignoredWordsSet = useMemo(
-		() => new Set(ignoredGrammarWords),
-		[ignoredGrammarWords],
-	);
 	const allWordsInLyrics = useAtomValue(allLyricsWordsAtom);
-	const grammarWarningSet = useMemo(
-		() =>
-			lineIsEnglish && toolMode === ToolMode.Sync
-				? collectWarningsWithSuggestions(
-						line,
-						ignoredWordsSet,
-						allWordsInLyrics,
-					)
-				: new Set<string>(),
-		[line, lineIsEnglish, ignoredWordsSet, toolMode, allWordsInLyrics],
-	);
-	const hasGrammarWarning = grammarWarningSet.has(word.id);
 	const [correctionDialog, setCorrectionDialog] = useState<{
 		open: boolean;
 		wordIndex: number;
@@ -1227,7 +1129,6 @@ export const LyricWordView: FC<{
 					line={line}
 					lineIndex={lineIndex}
 					wordIndex={wordIndex}
-					grammarWarning={hasGrammarWarning}
 				/>
 			)}
 			{toolMode === ToolMode.Edit && layoutMode === LayoutMode.Advance && (
@@ -1236,7 +1137,6 @@ export const LyricWordView: FC<{
 					line={line}
 					lineIndex={lineIndex}
 					wordIndex={wordIndex}
-					grammarWarning={hasGrammarWarning}
 				/>
 			)}
 			{toolMode === ToolMode.Sync && (hasRuby || !isWordBlank) && (
@@ -1246,7 +1146,6 @@ export const LyricWordView: FC<{
 					lineIndex={lineIndex}
 					wordIndex={wordIndex}
 					setCorrectionDialog={setCorrectionDialog}
-					handleWordUpdate={handleWordUpdate}
 					allWordsInLyrics={allWordsInLyrics}
 				/>
 			)}
@@ -1255,9 +1154,14 @@ export const LyricWordView: FC<{
 				onOpenChange={handleDialogClose}
 			>
 				<Dialog.Content>
-					<Dialog.Title>Correct Grammar</Dialog.Title>
+					<Dialog.Title>
+						{t("lyricWordView.editingWordTitle", "Editing Word")}
+					</Dialog.Title>
 					<Dialog.Description>
-						Edit the word or select a suggestion to fix the grammar issue.
+						{t(
+							"lyricWordView.editingWordDesc",
+							"Edit the word or apply suggested quick fixes.",
+						)}
 					</Dialog.Description>
 					<Flex direction="column" gap="3">
 						<Text size="1" color="gray" mb="-2">
@@ -1305,7 +1209,7 @@ export const LyricWordView: FC<{
 								</Grid>
 							) : (
 								<Text size="1" color="gray" align="center">
-									{t("lyricWordView.noSuggestions", "暂无建议")}
+									{t("lyricWordView.noSuggestions", "No suggestions")}
 								</Text>
 							)}
 						</Flex>

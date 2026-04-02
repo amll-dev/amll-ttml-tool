@@ -62,6 +62,19 @@ export const isEnglishWord = (text: string): boolean => {
 	return cleaned.length > 0 && /^[a-z']+$/.test(cleaned) && isLatin(cleaned);
 };
 
+export const isWordMisspelled = (
+	word: string,
+	allWordsInLyrics?: Set<string>,
+): boolean => {
+	const current = normalizeWord(word);
+	if (!current) return false;
+
+	const inCommon = COMMON_ENGLISH_WORDS.has(current);
+	const inExisting = allWordsInLyrics?.has(current);
+
+	return !inCommon && !inExisting;
+};
+
 export const isEnglishLine = (line: LyricLine): boolean => {
 	if (line.language && line.language !== "auto" && line.language !== "off") {
 		return line.language.startsWith("en");
