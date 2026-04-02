@@ -72,7 +72,7 @@ export const isEnglishLine = (line: LyricLine): boolean => {
 	const englishCount = line.words.filter((word) =>
 		isEnglishWord(word.word),
 	).length;
-	return total > 0 && englishCount / total >= 0.6;
+	return total > 0 && englishCount / total >= 0.4;
 };
 
 export const collectPossibleGrammarWarnings = (
@@ -95,7 +95,10 @@ export const collectPossibleGrammarWarnings = (
 			if (prev && current === prev) {
 				const hasSpaceBetween =
 					/\s$/.test(prevRaw) || /^\s/.test(currentRaw);
-				if (hasSpaceBetween) {
+				const hasPunctuationBetween =
+					/[.,!?;:]$/.test(prevRaw.trim()) ||
+					/^[.,!?;:]/.test(currentRaw.trim());
+				if (hasSpaceBetween || hasPunctuationBetween) {
 					warnings.add(line.words[i - 1].id);
 					warnings.add(line.words[i].id);
 				}
@@ -240,7 +243,10 @@ export const getGrammarSuggestions = (
 		if (prev && current === prev) {
 			const hasSpaceBetween =
 				/\s$/.test(prevRaw) || /^\s/.test(currentRaw);
-			if (hasSpaceBetween) {
+			const hasPunctuationBetween =
+				/[.,!?;:]$/.test(prevRaw.trim()) ||
+				/^[.,!?;:]/.test(currentRaw.trim());
+			if (hasSpaceBetween || hasPunctuationBetween) {
 				suggestions.push("__REMOVE_REPEATED_WORD__");
 			}
 		}
