@@ -73,7 +73,7 @@ export const SettingsAboutTab = () => {
 								{t("settings.about.update", "软件更新")}
 							</Heading>
 							{status === "available" && (
-								<Badge color="green">
+								<Badge color="ruby">
 									{t("settings.about.newVersion", "新版本")}
 								</Badge>
 							)}
@@ -122,7 +122,7 @@ export const SettingsAboutTab = () => {
 							{status === "ready" && (
 								<Flex direction="column" gap="2">
 									<Flex align="center" gap="2">
-										<CheckmarkCircle24Regular color="var(--green-9)" />
+										<CheckmarkCircle24Regular color="var(--ruby-9)" />
 										<Text size="2">
 											{t(
 												"settings.about.ready",

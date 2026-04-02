@@ -36,11 +36,25 @@ export const isDarkThemeAtom = atom((get) => {
 });
 export const autoDarkModeAtom = atom(true);
 
-// 歌词行编辑上下文
 export const lyricLinesAtom = atom({
 	lyricLines: [],
 	metadata: [],
 } as TTMLLyric);
+
+export const allLyricsWordsAtom = atom((get) => {
+	const lyrics = get(lyricLinesAtom);
+	const words = new Set<string>();
+	for (const line of lyrics.lyricLines) {
+		for (const wordObj of line.words) {
+			const cleaned = wordObj.word
+				.trim()
+				.toLowerCase()
+				.replace(/[^a-z']/g, "");
+			if (cleaned) words.add(cleaned);
+		}
+	}
+	return words;
+});
 
 /**
  * @description 当前项目的唯一标识符

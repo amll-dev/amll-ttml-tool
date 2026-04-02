@@ -116,10 +116,7 @@ export const TimeShiftDialog = () => {
 									0,
 									rubyWord.startTime + finalOffset,
 								);
-								rubyWord.endTime = Math.max(
-									0,
-									rubyWord.endTime + finalOffset,
-								);
+								rubyWord.endTime = Math.max(0, rubyWord.endTime + finalOffset);
 							});
 						}
 					});
@@ -237,8 +234,7 @@ export const TimeShiftDialog = () => {
 				</Flex>
 
 				<Flex gap="3" mt="5" justify="end">
-					<Dialog.Close>
-						<Button variant="soft" color="gray">
+					<Dialog.Close><Button variant="soft" color="gray">
 							{t("common.cancel", "取消")}
 						</Button>
 					</Dialog.Close>

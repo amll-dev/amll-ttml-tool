@@ -193,11 +193,7 @@ export const ImportFromLRCLIB = () => {
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							onKeyDown={onKeyDown}
-						>
-							<TextField.Slot>
-								<Search16Regular />
-							</TextField.Slot>
-						</TextField.Root>
+						><TextField.Slot><Search16Regular /></TextField.Slot></TextField.Root>
 						<Button onClick={handleSearch} disabled={loading}>
 							{loading ? <Spinner /> : t("common.search", "搜索")}
 						</Button>
@@ -245,9 +241,7 @@ export const ImportFromLRCLIB = () => {
 
 												<Box pr="2">
 													<Skeleton loading={true}>
-														<IconButton variant="ghost">
-															<Eye24Regular />
-														</IconButton>
+														<IconButton variant="ghost"><Eye24Regular /></IconButton>
 													</Skeleton>
 												</Box>
 											</Flex>
@@ -278,7 +272,7 @@ export const ImportFromLRCLIB = () => {
 														</Flex>
 
 														{track.syncedLyrics ? (
-															<Badge color="green" size="1">
+															<Badge color="ruby" size="1">
 																<CheckmarkCircle24Regular
 																	className={styles.badgeIcon}
 																/>
@@ -328,11 +322,7 @@ export const ImportFromLRCLIB = () => {
 					</ScrollArea>
 
 					<Flex justify="end" mt="4">
-						<Dialog.Close>
-							<Button variant="soft" color="gray">
-								{t("common.close", "关闭")}
-							</Button>
-						</Dialog.Close>
+						<Dialog.Close><Button variant="soft" color="gray">{t("common.close", "关闭")}</Button></Dialog.Close>
 					</Flex>
 				</Dialog.Content>
 			</Dialog.Root>
@@ -346,11 +336,7 @@ export const ImportFromLRCLIB = () => {
 						<Dialog.Title style={{ marginBottom: 0 }}>
 							{previewTrack?.name}
 						</Dialog.Title>
-						<Dialog.Close>
-							<IconButton variant="ghost" color="gray">
-								<Dismiss24Regular />
-							</IconButton>
-						</Dialog.Close>
+						<Dialog.Close><IconButton variant="ghost" color="gray"><Dismiss24Regular /></IconButton></Dialog.Close>
 					</Flex>
 
 					<Dialog.Description size="2" mb="4" color="gray">
@@ -398,11 +384,7 @@ export const ImportFromLRCLIB = () => {
 							</Flex>
 						</Text>
 
-						<Dialog.Close>
-							<Button variant="soft" color="gray">
-								{t("common.cancel", "取消")}
-							</Button>
-						</Dialog.Close>
+						<Dialog.Close><Button variant="soft" color="gray">{t("common.cancel", "取消")}</Button></Dialog.Close>
 						<Button
 							onClick={() => previewTrack && onTriggerImport(previewTrack)}
 						>

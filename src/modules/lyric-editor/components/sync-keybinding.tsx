@@ -2,7 +2,6 @@ import { produce } from "immer";
 import { useStore } from "jotai";
 import { type FC, useCallback } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
-import type { LyricLine, LyricWord, LyricWordBase } from "$/types/ttml";
 import {
 	findNextWord,
 	getCurrentLineLocation,
@@ -24,14 +23,14 @@ import {
 	syncTimeOffsetAtom,
 } from "$/modules/settings/states/sync";
 import {
+	keyMoveFirstWordAndPlayAtom,
+	keyMoveLastWordAndPlayAtom,
 	keyMoveNextLineAtom,
 	keyMoveNextWordAndPlayAtom,
 	keyMoveNextWordAtom,
 	keyMovePrevLineAtom,
 	keyMovePrevWordAndPlayAtom,
 	keyMovePrevWordAtom,
-    keyMoveLastWordAndPlayAtom,
-	keyMoveFirstWordAndPlayAtom,
 	keySyncEndAtom,
 	keySyncNextAtom,
 	keySyncStartAtom,
@@ -41,6 +40,7 @@ import {
 	selectedLinesAtom,
 	selectedWordsAtom,
 } from "$/states/main.ts";
+import type { LyricLine, LyricWord, LyricWordBase } from "$/types/ttml";
 import {
 	type KeyBindingEvent,
 	useKeyBindingAtom,
@@ -142,8 +142,7 @@ export const SyncKeyBinding: FC = () => {
 			store.set(selectedWordsAtom, new Set([nextWord.unit.id]));
 			store.set(selectedLinesAtom, new Set([nextWord.line.id]));
 			store.set(currentEmptyBeatAtom, 0);
-			if (play)
-				audioEngine.seekMusic(getUnitStartTime(nextWord.unit) / 1000);
+			if (play) audioEngine.seekMusic(getUnitStartTime(nextWord.unit) / 1000);
 			return true;
 		},
 		[store],
@@ -180,16 +179,14 @@ export const SyncKeyBinding: FC = () => {
 					store.set(selectedWordsAtom, new Set());
 				} else {
 					store.set(selectedWordsAtom, new Set([lastUnit.id]));
-					if (play)
-						audioEngine.seekMusic(getUnitStartTime(lastUnit) / 1000);
+					if (play) audioEngine.seekMusic(getUnitStartTime(lastUnit) / 1000);
 				}
 			} else {
 				const lineUnits = getSynchronizableUnits(location.line);
 				const prevUnit = lineUnits[location.syncIndex - 1];
 				if (!prevUnit) return false;
 				store.set(selectedWordsAtom, new Set([prevUnit.id]));
-				if (play)
-					audioEngine.seekMusic(getUnitStartTime(prevUnit) / 1000);
+				if (play) audioEngine.seekMusic(getUnitStartTime(prevUnit) / 1000);
 			}
 			return true;
 		},

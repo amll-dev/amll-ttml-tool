@@ -42,6 +42,7 @@ export interface LyricWord extends AMLLLyricWord {
 	obscene: boolean;
 	emptyBeat: number;
 	romanWarning?: boolean;
+	grammarWarning?: boolean;
 	ruby?: LyricWordBase[];
 }
 
@@ -66,6 +67,7 @@ export interface LyricLine extends AMLLLyricLine {
 	startTime: number;
 	endTime: number;
 	ignoreSync: boolean;
+	language?: string;
 	/**
 	 * @description 用于记录时间链接前的原始时间值，便于取消链接时恢复
 	 */
@@ -91,4 +93,5 @@ export const newLyricLine = (): LyricLine => ({
 	startTime: 0,
 	endTime: 0,
 	ignoreSync: false,
+	language: "auto",
 });

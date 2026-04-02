@@ -18,6 +18,19 @@ export const visualizeTimestampUpdateAtom = atomWithStorage(
 );
 export const syncTimeOffsetAtom = atomWithStorage("syncTimeOffset", 0);
 
+export const enableUpcomingWordHighlightAtom = atomWithStorage(
+	"enableUpcomingWordHighlight",
+	true,
+);
+export const upcomingWordHighlightThresholdAtom = atomWithStorage(
+	"upcomingWordHighlightThreshold",
+	500,
+);
+export const upcomingWordHighlightColorAtom = atomWithStorage(
+	"upcomingWordHighlightColor",
+	"var(--green-9)",
+);
+
 export const currentEmptyBeatAtom = atom(0);
 export const smartFirstWordActiveIdAtom = atom<string | null>(null);
 

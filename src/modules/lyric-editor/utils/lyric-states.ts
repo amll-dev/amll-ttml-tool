@@ -111,11 +111,12 @@ export function getCurrentLocation(
 		if (parsed) {
 			syncIndex = syncUnits.findIndex(
 				(unit) =>
-					unit.word.id === parsed.wordId &&
-					unit.rubyIndex === parsed.rubyIndex,
+					unit.word.id === parsed.wordId && unit.rubyIndex === parsed.rubyIndex,
 			);
 		} else {
-			syncIndex = syncUnits.findIndex((unit) => unit.word.id === selectedWordId);
+			syncIndex = syncUnits.findIndex(
+				(unit) => unit.word.id === selectedWordId,
+			);
 		}
 	}
 	if (syncIndex === -1) return;
@@ -149,9 +150,7 @@ export function useCurrentLocation(): LineAndWordLocationResult | undefined {
 		if (lyricLine === -1) return;
 		const line = lyrics.lyricLines[lyricLine];
 		const syncUnits = getSynchronizableUnits(line);
-		let syncIndex = syncUnits.findIndex((unit) =>
-			selectedWords.has(unit.id),
-		);
+		let syncIndex = syncUnits.findIndex((unit) => selectedWords.has(unit.id));
 		if (syncIndex === -1) {
 			const selectedWordId = [...selectedWords][0];
 			if (!selectedWordId) return;

@@ -20,6 +20,7 @@ import {
 	ContextMenu,
 	Flex,
 	IconButton,
+	Select,
 	Text,
 	TextField,
 } from "@radix-ui/themes";
@@ -43,6 +44,7 @@ import { useTranslation } from "react-i18next";
 import { predictLineRomanization } from "$/modules/segmentation/utils/Transliteration/distributor";
 import {
 	enableAutoRomanizationPredictionAtom,
+	romanizationModeAtom,
 	showLineRomanizationAtom,
 	showLineTranslationAtom,
 	showTimestampsAtom,
@@ -129,8 +131,9 @@ const LyricLineScroller = ({
 	const scrollToIndex = useAtomValue(scrollToIndexAtom);
 
 	useEffect(() => {
-		const targetIndex =
-			!Number.isNaN(scrollToIndex) ? scrollToIndex : editingRomanWordIndex;
+		const targetIndex = !Number.isNaN(scrollToIndex)
+			? scrollToIndex
+			: editingRomanWordIndex;
 		if (targetIndex === null || Number.isNaN(targetIndex)) return;
 		// console.log({ scrollToIndex, wordsContainer });
 		if (!wordsContainer) return;
@@ -276,6 +279,7 @@ export const LyricLineView: FC<{
 	const showTimestamps = useAtomValue(showTimestampsAtom);
 	const showEndTimeAsDuration = useAtomValue(showEndTimeAsDurationAtom);
 	const toolMode = useAtomValue(toolModeAtom);
+	const romanizationMode = useAtomValue(romanizationModeAtom);
 	const store = useStore();
 	const wordsContainerRef = useRef<HTMLDivElement>(null);
 	const blockDragRef = useRef(false);
@@ -324,10 +328,10 @@ export const LyricLineView: FC<{
 		const animation = startTimeRef.current?.animate(
 			[
 				{
-					backgroundColor: "var(--green-a8)",
+					backgroundColor: "var(--ruby-a8)",
 				},
 				{
-					backgroundColor: "var(--green-a4)",
+					backgroundColor: "var(--ruby-a4)",
 				},
 			],
 			{
@@ -458,13 +462,7 @@ export const LyricLineView: FC<{
 			});
 			setEndTimeLinked(true);
 		},
-		[
-			editLyricLines,
-			endTimeLinked,
-			line.endTime,
-			lineIndex,
-			lyricLines,
-		],
+		[editLyricLines, endTimeLinked, line.endTime, lineIndex, lyricLines],
 	);
 
 	return (
@@ -503,8 +501,8 @@ export const LyricLineView: FC<{
 					}
 				}}
 			>
-				<ContextMenu.Trigger disabled={toolMode !== ToolMode.Edit}>
-					<Flex
+				<ContextMenu.Trigger disabled={toolMode !== ToolMode.Edit}
+				><Flex
 						mx="2"
 						my="1"
 						direction="row"
@@ -612,7 +610,7 @@ export const LyricLineView: FC<{
 											if (v.has(line.id)) {
 												if (Number.isNaN(minBoundry)) minBoundry = i;
 												if (Number.isNaN(maxBoundry)) maxBoundry = i;
-
+ 
 												minBoundry = Math.min(minBoundry, i, lineIndex);
 												maxBoundry = Math.max(maxBoundry, i, lineIndex);
 											}
@@ -639,9 +637,15 @@ export const LyricLineView: FC<{
 							}
 						}}
 						asChild
-					>
-						<div>
-							<Flex direction="column" align="center" justify="center" ml="3">
+					><div
+						>
+							<Flex
+								direction="column"
+								align="center"
+								justify="center"
+								ml="3"
+								style={{ minWidth: "40px" }}
+							>
 								<Text
 									className={classNames(
 										styles.lineNumber,
@@ -654,6 +658,30 @@ export const LyricLineView: FC<{
 								</Text>
 								{line.isBG && <VideoBackgroundEffectFilled color="#4466FF" />}
 								{line.isDuet && <TextAlignRightFilled color="#44AA33" />}
+								{toolMode === ToolMode.Edit &&
+									romanizationMode === "multi-lingual" && (
+										<Select.Root
+											value={line.language || "auto"}
+											onValueChange={(val) => {
+												editLyricLines((state) => {
+													state.lyricLines[lineIndex].language = val;
+												});
+											}}
+											size="1"
+										>
+											<Select.Trigger
+												variant="ghost"
+												style={{ marginTop: 4, height: 20, padding: "0 2px" }}
+											/><Select.Content>
+												<Select.Item value="auto">Auto</Select.Item>
+												<Select.Item value="ja">JA</Select.Item>
+												<Select.Item value="zh">ZH</Select.Item>
+												<Select.Item value="en">EN</Select.Item>
+												<Select.Item value="ko">KO</Select.Item>
+												<Select.Item value="off">Off</Select.Item>
+											</Select.Content>
+										</Select.Root>
+									)}
 							</Flex>
 							<div
 								className={classNames(
@@ -815,30 +843,27 @@ export const LyricLineView: FC<{
 									<div className={styles.startTime} ref={startTimeRef}>
 										{msToTimestamp(line.startTime)}
 									</div>
-										<button
-											type="button"
-											className={classNames(
-												styles.endTime,
-												styles.endTimeButton,
-											)}
-											ref={endTimeRef}
-											onClick={onToggleEndTimeLink}
+									<button
+										type="button"
+										className={classNames(styles.endTime, styles.endTimeButton)}
+										ref={endTimeRef}
+										onClick={onToggleEndTimeLink}
+									>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+											}}
 										>
-											<span
-												style={{
-													display: "inline-flex",
-													alignItems: "center",
-												}}
-											>
-												{endTimeLinked ? (
-													<LinkMultiple20Regular />
-												) : showEndTimeAsDuration ? (
-													`+${line.endTime - line.startTime}ms`
-												) : (
-													msToTimestamp(line.endTime)
-												)}
-											</span>
-										</button>
+											{endTimeLinked ? (
+												<LinkMultiple20Regular />
+											) : showEndTimeAsDuration ? (
+												`+${line.endTime - line.startTime}ms`
+											) : (
+												msToTimestamp(line.endTime)
+											)}
+										</span>
+									</button>
 								</Flex>
 							)}
 						</div>

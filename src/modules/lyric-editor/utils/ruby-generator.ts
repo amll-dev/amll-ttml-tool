@@ -1,6 +1,6 @@
-import type { LyricWord, LyricWordBase } from "$/types/ttml";
 import * as wanakana from "wanakana";
 import { isKanaOnly } from "$/modules/segmentation/utils/Transliteration/TransliterationUtils";
+import type { LyricWord, LyricWordBase } from "$/types/ttml";
 
 const EXCLUDED_KANA_COMBOS = new Set([
 	"きゃ",
@@ -42,13 +42,10 @@ const EXCLUDED_KANA_COMBOS = new Set([
 	"りゃ",
 	"りゅ",
 	"りょ",
-	"じょ"
+	"じょ",
 ]);
 
-const buildRubyEntries = (
-	word: LyricWord,
-	tokens: string[],
-): LyricWordBase[] =>
+const buildRubyEntries = (word: LyricWord, tokens: string[]): LyricWordBase[] =>
 	tokens.map((token) => ({
 		word: token,
 		startTime: word.startTime,

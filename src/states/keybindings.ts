@@ -5,6 +5,8 @@
 import type { WritableAtom } from "jotai";
 import {
 	cmdDeleteSelection,
+	cmdMoveFirstWordAndPlay,
+	cmdMoveLastWordAndPlay,
 	cmdMoveNextLine,
 	cmdMoveNextWord,
 	cmdMoveNextWordAndPlay,
@@ -28,8 +30,6 @@ import {
 	cmdSwitchEditMode,
 	cmdSwitchPreviewMode,
 	cmdSwitchSyncMode,
-    cmdMoveLastWordAndPlay,
-	cmdMoveFirstWordAndPlay,
 	cmdSyncEnd,
 	cmdSyncNext,
 	cmdSyncStart,

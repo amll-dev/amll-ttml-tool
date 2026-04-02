@@ -1,6 +1,6 @@
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import type { CSSProperties } from "react";
 import { Toolbar } from "radix-ui";
+import type { CSSProperties } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useTopMenuActions } from "../useTopMenuActions";
 
@@ -39,13 +39,11 @@ export const HelpMenu = (props: HelpMenuProps) => {
 
 	return (
 		<DropdownMenu.Root>
-			<Toolbar.Button asChild>
-				<DropdownMenu.Trigger>
-					<Button variant="soft" style={props.buttonStyle}>
+			<Toolbar.Button asChild
+			><DropdownMenu.Trigger
+				><Button variant="soft" style={props.buttonStyle}>
 						<Trans i18nKey="topBar.menu.help">帮助</Trans>
-					</Button>
-				</DropdownMenu.Trigger>
-			</Toolbar.Button>
+					</Button></DropdownMenu.Trigger></Toolbar.Button>
 			<DropdownMenu.Content>
 				<HelpMenuItems />
 			</DropdownMenu.Content>

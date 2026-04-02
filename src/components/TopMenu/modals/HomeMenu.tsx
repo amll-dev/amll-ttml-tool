@@ -9,11 +9,7 @@ import { ToolMenu } from "./ToolMenu";
 export const HomeMenu: FC = () => {
 	return (
 		<DropdownMenu.Root>
-			<DropdownMenu.Trigger>
-				<IconButton variant="soft">
-					<HomeRegular />
-				</IconButton>
-			</DropdownMenu.Trigger>
+			<DropdownMenu.Trigger><IconButton variant="soft"><HomeRegular /></IconButton></DropdownMenu.Trigger>
 			<DropdownMenu.Content>
 				<FileMenu variant="submenu" />
 				<EditMenu variant="submenu" />

@@ -132,7 +132,9 @@ function App() {
 	const customBackgroundOpacity = useAtomValue(customBackgroundOpacityAtom);
 	const customBackgroundMask = useAtomValue(customBackgroundMaskAtom);
 	const customBackgroundBlur = useAtomValue(customBackgroundBlurAtom);
-	const customBackgroundBrightness = useAtomValue(customBackgroundBrightnessAtom);
+	const customBackgroundBrightness = useAtomValue(
+		customBackgroundBrightnessAtom,
+	);
 	const [hasBackground, setHasBackground] = useState(false);
 	const effectiveTheme = customBackgroundImage
 		? "light"
@@ -291,7 +293,7 @@ function App() {
 			appearance={effectiveTheme}
 			panelBackground="solid"
 			hasBackground={hasBackground}
-			accentColor={effectiveTheme === "dark" ? "jade" : "green"}
+			accentColor="red"
 			className={styles.radixTheme}
 		>
 			<ErrorBoundary
@@ -341,16 +343,15 @@ function App() {
 								)}
 								{toolMode === ToolMode.Preview && (
 									<SuspensePlaceHolder key="amll-preview">
-										<Box height="100%" key="amll-preview" p="2" asChild>
-											<motion.div
+										<Box height="100%" key="amll-preview" p="2" asChild
+										><motion.div
 												layout="position"
 												initial={{ opacity: 0 }}
 												animate={{ opacity: 1 }}
 												exit={{ opacity: 0 }}
 											>
 												<AMLLWrapper />
-											</motion.div>
-										</Box>
+											</motion.div></Box>
 									</SuspensePlaceHolder>
 								)}
 							</AnimatePresence>

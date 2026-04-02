@@ -108,17 +108,38 @@ export const AudioSlider = () => {
 		};
 
 		let frame = 0;
+		let lastAudioTime = -1;
+		let lastRealTime = performance.now();
+		let interpolatedTime = 0;
+
 		const onFrame = () => {
 			if (!audioEngine.musicPlaying) {
 				cancelAnimationFrame(frame);
 				frame = 0;
 				return;
 			}
-			setCurrentTime((audioEngine.musicCurrentTime * 1000) | 0);
+
+			const currentRealTime = performance.now();
+			const currentAudioTime = audioEngine.musicCurrentTime;
+
+			// Interpolate playhead linearly between hardware audio time updates
+			if (currentAudioTime !== lastAudioTime) {
+				interpolatedTime = currentAudioTime;
+				lastAudioTime = currentAudioTime;
+			} else {
+				const dt = (currentRealTime - lastRealTime) / 1000;
+				interpolatedTime += dt * audioEngine.musicPlayBackRate;
+			}
+			lastRealTime = currentRealTime;
+
+			setCurrentTime((interpolatedTime * 1000) | 0);
 			frame = requestAnimationFrame(onFrame);
 		};
 
 		const handlePlay = () => {
+			lastAudioTime = audioEngine.musicCurrentTime;
+			interpolatedTime = lastAudioTime;
+			lastRealTime = performance.now();
 			onFrame();
 			setAudioPlaying(true);
 		};

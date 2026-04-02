@@ -47,40 +47,24 @@ export const TopMenu: FC = () => {
 	const showHomeButton = width < 800;
 	const menu = useTopMenuActions();
 
-	useKeyBindingAtom(keyNewFileAtom, menu.onNewFile, [
-		menu.onNewFile,
-	]);
-	useKeyBindingAtom(keyOpenFileAtom, menu.onOpenFile, [
-		menu.onOpenFile,
-	]);
-	useKeyBindingAtom(keySaveFileAtom, menu.onSaveFile, [
-		menu.onSaveFile,
-	]);
+	useKeyBindingAtom(keyNewFileAtom, menu.onNewFile, [menu.onNewFile]);
+	useKeyBindingAtom(keyOpenFileAtom, menu.onOpenFile, [menu.onOpenFile]);
+	useKeyBindingAtom(keySaveFileAtom, menu.onSaveFile, [menu.onSaveFile]);
 	useKeyBindingAtom(keyUndoAtom, menu.onUndo, [menu.onUndo]);
 	useKeyBindingAtom(keyRedoAtom, menu.onRedo, [menu.onRedo]);
-	useKeyBindingAtom(
-		keySelectAllAtom,
-		menu.onUnselectAll,
-		[menu.onUnselectAll],
-	);
-	useKeyBindingAtom(keySelectAllAtom, menu.onSelectAll, [
-		menu.onSelectAll,
-	]);
-	useKeyBindingAtom(
-		keySelectInvertedAtom,
+	useKeyBindingAtom(keySelectAllAtom, menu.onUnselectAll, [menu.onUnselectAll]);
+	useKeyBindingAtom(keySelectAllAtom, menu.onSelectAll, [menu.onSelectAll]);
+	useKeyBindingAtom(keySelectInvertedAtom, menu.onSelectInverted, [
 		menu.onSelectInverted,
-		[menu.onSelectInverted],
-	);
+	]);
 	useKeyBindingAtom(
 		keySelectWordsOfMatchedSelectionAtom,
 		menu.onSelectWordsOfMatchedSelection,
 		[menu.onSelectWordsOfMatchedSelection],
 	);
-	useKeyBindingAtom(
-		keyDeleteSelectionAtom,
+	useKeyBindingAtom(keyDeleteSelectionAtom, menu.onDeleteSelection, [
 		menu.onDeleteSelection,
-		[menu.onDeleteSelection],
-	);
+	]);
 
 	return (
 		<Flex

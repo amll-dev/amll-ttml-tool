@@ -185,8 +185,7 @@ export const DistributeRomanizationDialog = () => {
 				</Flex>
 
 				<Flex gap="3" mt="5" justify="end">
-					<Dialog.Close>
-						<Button variant="soft" color="gray">
+					<Dialog.Close><Button variant="soft" color="gray">
 							{t("common.cancel", "取消")}
 						</Button>
 					</Dialog.Close>

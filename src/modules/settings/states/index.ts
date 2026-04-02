@@ -62,6 +62,14 @@ export const highlightActiveWordAtom = atomWithStorage(
 );
 
 export const highlightErrorsAtom = atomWithStorage("highlightErrors", false);
+export const highlightGrammarWarningsAtom = atomWithStorage(
+	"highlightGrammarWarnings",
+	false,
+);
+export const ignoredGrammarWordsAtom = atomWithStorage(
+	"ignoredGrammarWords",
+	[] as string[],
+);
 
 export const smartFirstWordAtom = atomWithStorage("smartFirstWord", false);
 export const smartLastWordAtom = atomWithStorage("smartLastWord", false);
@@ -69,4 +77,14 @@ export const smartLastWordAtom = atomWithStorage("smartLastWord", false);
 export const enableAutoRomanizationPredictionAtom = atomWithStorage(
 	"enableAutoRomanizationPrediction",
 	false,
+);
+
+export const romanizationModeAtom = atomWithStorage<"global" | "multi-lingual">(
+	"romanizationMode",
+	"global",
+);
+
+export const globalRomanLanguageAtom = atomWithStorage<string>(
+	"globalRomanLanguage",
+	"ja",
 );

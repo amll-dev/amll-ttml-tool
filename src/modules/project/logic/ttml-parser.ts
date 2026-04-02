@@ -172,10 +172,10 @@ function createWordFromSpanElement(wordEl: Element): LyricWord | null {
 		const rubyWords: LyricWordBase[] = rubyTextSpans.map((rubySpan) => {
 			const rubyBegin = rubySpan.begin
 				? parseTimespan(rubySpan.begin)
-				: containerStart ?? 0;
+				: (containerStart ?? 0);
 			const rubyEnd = rubySpan.end
 				? parseTimespan(rubySpan.end)
-				: containerEnd ?? 0;
+				: (containerEnd ?? 0);
 			return {
 				word: flattenSpanInnerText(rubySpan, skipRoles),
 				startTime: rubyBegin,

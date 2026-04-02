@@ -1,4 +1,4 @@
-import { SegmentedControl, Text } from "@radix-ui/themes";
+import { Flex, SegmentedControl, Text } from "@radix-ui/themes";
 import { useAtom } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
 import { type FC, useCallback } from "react";
@@ -61,11 +61,22 @@ export const TitleBar: FC = () => {
 			}
 			endChildren={
 				!import.meta.env.TAURI_ENV_PLATFORM && (
-					<Text color="gray" wrap="nowrap" size="2" mr="2">
-						<span className={styles.title}>
-							{t("topBar.appName", "Apple Music-like Lyrics TTML Tool")}
-						</span>
-					</Text>
+					<Flex
+						direction="column"
+						align="end"
+						justify="center"
+						mr="2"
+						style={{ lineHeight: 1.2 }}
+					>
+						<Text color="gray" wrap="nowrap" size="2">
+							<span className={styles.title}>
+								{t("topBar.appName", "Apple Music-like Lyrics TTML Tool")}
+							</span>
+						</Text>
+						<Text size="1" color="gray" style={{ opacity: 0.7 }}>
+							Forked by NaeNae
+						</Text>
+					</Flex>
 				)
 			}
 			onSpacerClicked={() => {

@@ -50,7 +50,13 @@ interface MetadataEntryProps {
 }
 
 const MetadataEntry = memo(
-	({ entry, index, setLyricLines, option, focusAddKeyButton }: MetadataEntryProps) => {
+	({
+		entry,
+		index,
+		setLyricLines,
+		option,
+		focusAddKeyButton,
+	}: MetadataEntryProps) => {
 		const validation = option?.validation;
 		const rowHasError = validation
 			? entry.value.some(
@@ -288,8 +294,7 @@ const MetadataEntry = memo(
 											asChild={isButtonEnabled}
 											variant="soft"
 											title={t("metadataDialog.openLink", "打开链接")}
-										>
-											{isButtonEnabled ? (
+										>{isButtonEnabled ? (
 												<a
 													href={url || ""}
 													target="_blank"
@@ -299,8 +304,7 @@ const MetadataEntry = memo(
 												</a>
 											) : (
 												<Open16Regular />
-											)}
-										</IconButton>
+											)}</IconButton>
 									)}
 									<IconButton
 										variant="soft"
@@ -641,12 +645,10 @@ export const MetadataEditor = () => {
 							style={{
 								flex: "1 0 auto",
 							}}
-						>
-							<Button variant="soft" ref={addKeyButtonRef}>
+						><Button variant="soft" ref={addKeyButtonRef}>
 								{t("metadataDialog.addKeyValue", "添加新键值")}
 								<DropdownMenu.TriggerIcon />
-							</Button>
-						</DropdownMenu.Trigger>
+							</Button></DropdownMenu.Trigger>
 						<DropdownMenu.Content>
 							<Flex gap="1">
 								<TextField.Root
@@ -742,16 +744,15 @@ export const MetadataEditor = () => {
 						<Delete16Regular />
 						{t("metadataDialog.clear", "清空")}
 					</Button>
-					<Button asChild variant="soft">
-						<a
+					<Button asChild variant="soft"
+					><a
 							target="_blank"
 							rel="noreferrer"
 							href="https://github.com/amll-dev/amll-ttml-tool/wiki/%E6%AD%8C%E8%AF%8D%E5%85%83%E6%95%B0%E6%8D%AE"
 						>
 							<Info16Regular />
 							{t("metadataDialog.info", "了解详情")}
-						</a>
-					</Button>
+						</a></Button>
 				</Flex>
 			</Dialog.Content>
 		</Dialog.Root>

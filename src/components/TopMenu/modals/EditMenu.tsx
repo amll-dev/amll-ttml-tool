@@ -1,6 +1,6 @@
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import type { CSSProperties } from "react";
 import { Toolbar } from "radix-ui";
+import type { CSSProperties } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { formatKeyBindings } from "$/utils/keybindings";
 import { useTopMenuActions } from "../useTopMenuActions";
@@ -97,13 +97,11 @@ export const EditMenu = (props: EditMenuProps) => {
 
 	return (
 		<DropdownMenu.Root>
-			<Toolbar.Button asChild>
-				<DropdownMenu.Trigger style={props.triggerStyle}>
-					<Button variant="soft" style={props.buttonStyle}>
+			<Toolbar.Button asChild
+			><DropdownMenu.Trigger style={props.triggerStyle}
+				><Button variant="soft" style={props.buttonStyle}>
 						<Trans i18nKey="topBar.menu.edit">编辑</Trans>
-					</Button>
-				</DropdownMenu.Trigger>
-			</Toolbar.Button>
+					</Button></DropdownMenu.Trigger></Toolbar.Button>
 			<DropdownMenu.Content>
 				<EditMenuItems />
 			</DropdownMenu.Content>

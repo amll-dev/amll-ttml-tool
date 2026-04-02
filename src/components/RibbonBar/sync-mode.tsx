@@ -9,11 +9,28 @@
  * https://github.com/amll-dev/amll-ttml-tool/blob/main/LICENSE
  */
 
+import { DeleteRegular, MoreHorizontalRegular } from "@fluentui/react-icons";
+import {
+	Checkbox,
+	Dialog,
+	Flex,
+	Grid,
+	IconButton,
+	Slider,
+	Text,
+	TextField,
+} from "@radix-ui/themes";
+import { useAtom, useAtomValue } from "jotai";
+import { useSetImmerAtom } from "jotai-immer";
+import { type FC, forwardRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useCurrentLocation } from "$/modules/lyric-editor/utils/lyric-states.ts";
 import {
 	displayRomanizationInSyncAtom,
 	highlightActiveWordAtom,
 	highlightErrorsAtom,
+	highlightGrammarWarningsAtom,
+	ignoredGrammarWordsAtom,
 	showTimestampsAtom,
 	showWordRomanizationInputAtom,
 } from "$/modules/settings/states/index.ts";
@@ -29,18 +46,6 @@ import {
 	keySyncStartAtom,
 } from "$/states/keybindings.ts";
 import { bgLyricIgnoreSyncAtom, lyricLinesAtom } from "$/states/main.ts";
-import {
-	Checkbox,
-	Flex,
-	Grid,
-	Slider,
-	Text,
-	TextField,
-} from "@radix-ui/themes";
-import { useAtom, useAtomValue } from "jotai";
-import { useSetImmerAtom } from "jotai-immer";
-import { type FC, forwardRef } from "react";
-import { useTranslation } from "react-i18next";
 import { KeyBinding } from "../KeyBinding/index.tsx";
 import { RibbonFrame, RibbonSection } from "./common";
 
@@ -80,6 +85,14 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 		);
 		const [showTimestamps, setShowTimestamps] = useAtom(showTimestampsAtom);
 		const [highlightErrors, setHighlightErrors] = useAtom(highlightErrorsAtom);
+		const [highlightGrammarWarnings, setHighlightGrammarWarnings] = useAtom(
+			highlightGrammarWarningsAtom,
+		);
+		const [ignoredGrammarWords, setIgnoredGrammarWords] = useAtom(
+			ignoredGrammarWordsAtom,
+		);
+		const [isGrammarDialogOpen, setIsGrammarDialogOpen] = useState(false);
+		const [newWord, setNewWord] = useState("");
 		const [highlightActiveWord, setHighlightActiveWord] = useAtom(
 			highlightActiveWordAtom,
 		);
@@ -97,147 +110,228 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 		const { t } = useTranslation();
 
 		return (
-			<RibbonFrame ref={ref}>
-				<RibbonSection
-					label={t("ribbonBar.syncMode.currentEmptyBeat", "当前空拍")}
-				>
-					<Grid columns="0fr 4em" gap="4" gapY="1" flexGrow="1" align="center">
-						<EmptyBeatField />
-					</Grid>
-				</RibbonSection>
-				<RibbonSection
-					label={t("ribbonBar.syncMode.syncAdjustment", "打轴调整")}
-				>
-					<Grid columns="0fr 0fr" gap="4" gapY="1" flexGrow="1" align="center">
-						<Text wrap="nowrap" size="1">
-							{t("ribbonBar.syncMode.timeOffset", "时间戳位移")}
-						</Text>
-						<TextField.Root
-							type="number"
-							step={1}
-							size="1"
-							style={{
-								width: "8em",
-							}}
-							value={syncTimeOffset}
-							onChange={(e) => setSyncTimeOffset(e.target.valueAsNumber)}
+			<>
+				<RibbonFrame ref={ref}>
+					<RibbonSection
+						label={t("ribbonBar.syncMode.currentEmptyBeat", "当前空拍")}
+					>
+						<Grid
+							columns="0fr 4em"
+							gap="4"
+							gapY="1"
+							flexGrow="1"
+							align="center"
 						>
-							<TextField.Slot />
-							<TextField.Slot>ms</TextField.Slot>
-						</TextField.Root>
-						<EmptyBeatField />
-					</Grid>
-				</RibbonSection>
-				<RibbonSection
-					label={t("ribbonBar.syncMode.assistSettings", "辅助设置")}
-				>
-					<Grid columns="0fr 0fr" gap="2" gapY="1" flexGrow="1" align="center">
-						<Text wrap="nowrap" size="1">
-							{t("ribbonBar.syncMode.showTimestampUpdate", "呈现时间戳更新")}
-						</Text>
-						<Checkbox
-							checked={visualizeTimestampUpdate}
-							onCheckedChange={(v) => setVisualizeTimestampUpdate(!!v)}
-						/>
-						<Text wrap="nowrap" size="1">
-							{t("ribbonBar.syncMode.touchSyncPanel", "触控打轴辅助面板")}
-						</Text>
-						<Checkbox
-							checked={showTouchSyncPanel}
-							onCheckedChange={(v) => setShowTouchSyncPanel(!!v)}
-						/>
-						<Text wrap="nowrap" size="1">
-							{t(
-								"ribbonBar.syncMode.bgLyricIgnoreSync",
-								"背景歌词忽略打轴",
-							)}
-						</Text>
-						<Checkbox
-							checked={bgLyricIgnoreSync}
-							onCheckedChange={(v) => {
-								const next = !!v;
-								setBgLyricIgnoreSync(next);
-								editLyricLines((state) => {
-									for (const line of state.lyricLines) {
-										if (line.isBG) {
-											line.ignoreSync = next;
-										}
-									}
-									return state;
-								});
-							}}
-						/>
-					</Grid>
-				</RibbonSection>
-				<RibbonSection
-					label={t("ribbonBar.syncMode.displayOptions", "显示选项")}
-				>
-					<Grid columns="0fr 0fr" gap="2" gapY="1" flexGrow="1" align="center">
-						<Text wrap="nowrap" size="1">
-							{t("ribbonBar.syncMode.showTimestamps", "显示时间戳")}
-						</Text>
-						<Checkbox
-							checked={showTimestamps}
-							onCheckedChange={(v) => setShowTimestamps(!!v)}
-						/>
-						<Text wrap="nowrap" size="1">
-							{t("ribbonBar.syncMode.highlightActiveWord", "高亮当前音节")}
-						</Text>
-						<Checkbox
-							checked={highlightActiveWord}
-							onCheckedChange={(v) => setHighlightActiveWord(!!v)}
-						/>
-						<Text wrap="nowrap" size="1">
-							{t("ribbonBar.syncMode.highlightErrors", "高亮错误")}
-						</Text>
-						<Checkbox
-							checked={highlightErrors}
-							onCheckedChange={(v) => setHighlightErrors(!!v)}
-						/>
-						{showWordRomanizationInput && (
-							<>
-								<Text wrap="nowrap" size="1">
-									{t(
-										"ribbonBar.syncMode.showPerWordRomanization",
-										"显示逐字音译",
-									)}
-								</Text>
-								<Checkbox
-									checked={displayRomanizationInSync}
-									onCheckedChange={(v) => setdisplayRomanizationInSync(!!v)}
-								/>
-							</>
-						)}
-					</Grid>
-				</RibbonSection>
-				<RibbonSection
-					label={t("ribbonBar.syncMode.keyBindingReference", "打轴键位速查")}
-				>
-					<Flex gap="4">
+							<EmptyBeatField />
+						</Grid>
+					</RibbonSection>
+					<RibbonSection
+						label={t("ribbonBar.syncMode.syncAdjustment", "打轴调整")}
+					>
 						<Grid
 							columns="0fr 0fr"
 							gap="4"
 							gapY="1"
 							flexGrow="1"
 							align="center"
-							justify="center"
 						>
 							<Text wrap="nowrap" size="1">
-								{t("ribbonBar.syncMode.startSync", "起始轴")}
+								{t("ribbonBar.syncMode.timeOffset", "时间戳位移")}
 							</Text>
-							<KeyBinding kbdAtom={keySyncStartAtom} />
-							<Text wrap="nowrap" size="1">
-								{t("ribbonBar.syncMode.continuousSync", "连续轴")}
-							</Text>
-							<KeyBinding kbdAtom={keySyncNextAtom} />
-							<Text wrap="nowrap" size="1">
-								{t("ribbonBar.syncMode.endSync", "结束轴")}
-							</Text>
-							<KeyBinding kbdAtom={keySyncEndAtom} />
+							<TextField.Root
+								type="number"
+								step={1}
+								size="1"
+								style={{
+									width: "8em",
+								}}
+								value={syncTimeOffset}
+								onChange={(e) => setSyncTimeOffset(e.target.valueAsNumber)}
+							><TextField.Slot /><TextField.Slot><Text>ms</Text></TextField.Slot></TextField.Root>
+							<EmptyBeatField />
 						</Grid>
-					</Flex>
-				</RibbonSection>
-			</RibbonFrame>
+					</RibbonSection>
+					<RibbonSection
+						label={t("ribbonBar.syncMode.assistSettings", "辅助设置")}
+					>
+						<Grid
+							columns="0fr 0fr"
+							gap="2"
+							gapY="1"
+							flexGrow="1"
+							align="center"
+						>
+							<Text wrap="nowrap" size="1">
+								{t("ribbonBar.syncMode.showTimestampUpdate", "呈现时间戳更新")}
+							</Text>
+							<Checkbox
+								checked={visualizeTimestampUpdate}
+								onCheckedChange={(v) => setVisualizeTimestampUpdate(!!v)}
+							/>
+							<Text wrap="nowrap" size="1">
+								{t("ribbonBar.syncMode.touchSyncPanel", "触控打轴辅助面板")}
+							</Text>
+							<Checkbox
+								checked={showTouchSyncPanel}
+								onCheckedChange={(v) => setShowTouchSyncPanel(!!v)}
+							/>
+							<Text wrap="nowrap" size="1">
+								{t("ribbonBar.syncMode.bgLyricIgnoreSync", "背景歌词忽略打轴")}
+							</Text>
+							<Checkbox
+								checked={bgLyricIgnoreSync}
+								onCheckedChange={(v) => {
+									const next = !!v;
+									setBgLyricIgnoreSync(next);
+									editLyricLines((state) => {
+										for (const line of state.lyricLines) {
+											if (line.isBG) {
+												line.ignoreSync = next;
+											}
+										}
+										return state;
+									});
+								}}
+							/>
+						</Grid>
+					</RibbonSection>
+					<RibbonSection
+						label={t("ribbonBar.syncMode.displayOptions", "显示选项")}
+					>
+						<Grid
+							columns="0fr 0fr"
+							gap="2"
+							gapY="1"
+							flexGrow="1"
+							align="center"
+						>
+							<Text wrap="nowrap" size="1">
+								{t("ribbonBar.syncMode.showTimestamps", "显示时间戳")}
+							</Text>
+							<Checkbox
+								checked={showTimestamps}
+								onCheckedChange={(v) => setShowTimestamps(!!v)}
+							/>
+							<Text wrap="nowrap" size="1">
+								{t("ribbonBar.syncMode.highlightActiveWord", "高亮当前音节")}
+							</Text>
+							<Checkbox
+								checked={highlightActiveWord}
+								onCheckedChange={(v) => setHighlightActiveWord(!!v)}
+							/>
+							<Text wrap="nowrap" size="1">
+								{t("ribbonBar.syncMode.highlightErrors", "高亮错误")}
+							</Text>
+							<Checkbox
+								checked={highlightErrors}
+								onCheckedChange={(v) => setHighlightErrors(!!v)}
+							/>
+							<Flex align="center" gap="1">
+								<Text wrap="nowrap" size="1">
+									{t(
+										"ribbonBar.syncMode.highlightGrammarWarnings",
+										"Highlight Grammar Warnings",
+									)}
+								</Text>
+								<IconButton
+									size="1"
+									variant="ghost"
+									onClick={() => setIsGrammarDialogOpen(true)}
+								>
+									<MoreHorizontalRegular />
+								</IconButton>
+							</Flex>
+							<Checkbox
+								checked={highlightGrammarWarnings}
+								onCheckedChange={(v) => setHighlightGrammarWarnings(!!v)}
+							/>
+							{showWordRomanizationInput && (
+								<>
+									<Text wrap="nowrap" size="1">
+										{t(
+											"ribbonBar.syncMode.showPerWordRomanization",
+											"显示逐字音译",
+										)}
+									</Text>
+									<Checkbox
+										checked={displayRomanizationInSync}
+										onCheckedChange={(v) => setdisplayRomanizationInSync(!!v)}
+									/>
+								</>
+							)}
+						</Grid>
+					</RibbonSection>
+					<RibbonSection
+						label={t("ribbonBar.syncMode.keyBindingReference", "打轴键位速查")}
+					>
+						<Flex gap="4">
+							<Grid
+								columns="0fr 0fr"
+								gap="4"
+								gapY="1"
+								flexGrow="1"
+								align="center"
+								justify="center"
+							>
+								<Text wrap="nowrap" size="1">
+									{t("ribbonBar.syncMode.startSync", "起始轴")}
+								</Text>
+								<KeyBinding kbdAtom={keySyncStartAtom} />
+								<Text wrap="nowrap" size="1">
+									{t("ribbonBar.syncMode.continuousSync", "连续轴")}
+								</Text>
+								<KeyBinding kbdAtom={keySyncNextAtom} />
+								<Text wrap="nowrap" size="1">
+									{t("ribbonBar.syncMode.endSync", "结束轴")}
+								</Text>
+								<KeyBinding kbdAtom={keySyncEndAtom} />
+							</Grid>
+						</Flex>
+					</RibbonSection>
+				</RibbonFrame>
+				<Dialog.Root
+					open={isGrammarDialogOpen}
+					onOpenChange={setIsGrammarDialogOpen}
+				>
+					<Dialog.Content>
+						<Dialog.Title>Manage Ignored Grammar Words</Dialog.Title>
+						<Dialog.Description>
+							Add words to ignore in grammar warnings.
+						</Dialog.Description>
+						<Flex direction="column" gap="3">
+							<TextField.Root
+								placeholder="Enter word to ignore"
+								value={newWord}
+								onChange={(e) => setNewWord(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" && newWord.trim()) {
+										setIgnoredGrammarWords((prev) => [...prev, newWord.trim()]);
+										setNewWord("");
+									}
+								}}
+							/>
+							<Flex direction="column" gap="2">
+								{ignoredGrammarWords.map((word, index) => (
+									<Flex key={word} align="center" justify="between">
+										<Text>{word}</Text>
+										<IconButton
+											size="1"
+											variant="ghost"
+											onClick={() =>
+												setIgnoredGrammarWords((prev) =>
+													prev.filter((_, i) => i !== index),
+												)
+											}
+										>
+											<DeleteRegular />
+										</IconButton>
+									</Flex>
+								))}
+							</Flex>
+						</Flex>
+					</Dialog.Content>
+				</Dialog.Root>
+			</>
 		);
 	},
 );

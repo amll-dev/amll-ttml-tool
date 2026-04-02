@@ -103,11 +103,7 @@ export default function exportTTMLText(
 		return null;
 	}
 
-	function addWrapperToElement(
-		el: Element,
-		prefix: string,
-		suffix: string,
-	) {
+	function addWrapperToElement(el: Element, prefix: string, suffix: string) {
 		if (!prefix && !suffix) return;
 		const first = findFirstTextNode(el);
 		const last = findLastTextNode(el);

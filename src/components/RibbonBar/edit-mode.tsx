@@ -40,6 +40,10 @@ import {
 	showWordRomanizationInputAtom,
 } from "$/modules/settings/states";
 import {
+	globalRomanLanguageAtom,
+	romanizationModeAtom,
+} from "$/modules/settings/states/index.ts";
+import {
 	editingTimeFieldAtom,
 	lyricLinesAtom,
 	requestFocusAtom,
@@ -48,6 +52,7 @@ import {
 	showEndTimeAsDurationAtom,
 } from "$/states/main.ts";
 import { type LyricLine, type LyricWord, newLyricLine } from "$/types/ttml";
+import { romanizeText } from "$/utils/romanization.ts";
 import { msToTimestamp, parseTimespan } from "$/utils/timestamp.ts";
 import { RibbonFrame, RibbonSection } from "./common";
 
@@ -218,39 +223,56 @@ function EditField<
 				const selectedItems = store.get(itemAtom);
 				if (fieldName === "endTime" && showDurationInput) {
 					const trimmedValue = rawValue.trim();
-					const isDelta = trimmedValue.startsWith("+") || trimmedValue.startsWith("-");
+					const isDelta =
+						trimmedValue.startsWith("+") || trimmedValue.startsWith("-");
 					const parsedValue = Number(trimmedValue);
 					if (!Number.isFinite(parsedValue)) return;
 					if (!isDelta && parsedValue <= 0) return;
 					editLyricLines((state) => {
 						for (const line of state.lyricLines) {
 							if (isWordField) {
-								const updates = new Map<string, { startTime?: number, endTime?: number }>();
-								
+								const updates = new Map<
+									string,
+									{ startTime?: number; endTime?: number }
+								>();
+
 								// First pass: Calculate all new end times for selected words
-								for (let wordIndex = 0; wordIndex < line.words.length; wordIndex++) {
+								for (
+									let wordIndex = 0;
+									wordIndex < line.words.length;
+									wordIndex++
+								) {
 									const word = line.words[wordIndex];
 									if (!selectedItems.has(word.id)) continue;
-									
+
 									const nextWord = line.words[wordIndex + 1];
 									const nextStartTime = nextWord?.startTime;
 									const originalEndTime = word.endTime;
-									
+
 									// Calculate new end time
-									const newEndTimeRaw = isDelta ? word.endTime + parsedValue : word.startTime + parsedValue;
+									const newEndTimeRaw = isDelta
+										? word.endTime + parsedValue
+										: word.startTime + parsedValue;
 									const newEndTime = Math.max(word.startTime, newEndTimeRaw);
-									
+
 									// Store the update for the current word
 									const wordUpdate = updates.get(word.id) || {};
 									wordUpdate.endTime = newEndTime;
 									updates.set(word.id, wordUpdate);
-									
+
 									// If it was synchronized, store the start time update for the next word
-									if (isDelta && nextWord && originalEndTime === nextStartTime) {
+									if (
+										isDelta &&
+										nextWord &&
+										originalEndTime === nextStartTime
+									) {
 										// We only move nextWord's startTime if the new end time doesn't exceed its original end time
 										// to avoid inverting its duration (unless it's also selected, handled below)
 										const nextWordOriginalEndTime = nextWord.endTime;
-										if (newEndTime <= nextWordOriginalEndTime || selectedItems.has(nextWord.id)) {
+										if (
+											newEndTime <= nextWordOriginalEndTime ||
+											selectedItems.has(nextWord.id)
+										) {
 											const nextUpdate = updates.get(nextWord.id) || {};
 											nextUpdate.startTime = newEndTime;
 											// Don't auto-fix nextWord.endTime here, let the second pass or its own delta fix it
@@ -258,12 +280,16 @@ function EditField<
 										}
 									}
 								}
-								
+
 								// Second pass: Apply updates and ensure durations are valid
-								for (let wordIndex = 0; wordIndex < line.words.length; wordIndex++) {
+								for (
+									let wordIndex = 0;
+									wordIndex < line.words.length;
+									wordIndex++
+								) {
 									const word = line.words[wordIndex];
 									const update = updates.get(word.id);
-									
+
 									if (update) {
 										if (update.startTime !== undefined) {
 											word.startTime = update.startTime;
@@ -278,7 +304,9 @@ function EditField<
 									}
 								}
 							} else if (selectedItems.has(line.id)) {
-								const newEndTimeRaw = isDelta ? line.endTime + parsedValue : line.startTime + parsedValue;
+								const newEndTimeRaw = isDelta
+									? line.endTime + parsedValue
+									: line.startTime + parsedValue;
 								line.endTime = Math.max(line.startTime, newEndTimeRaw);
 							}
 						}
@@ -303,7 +331,7 @@ function EditField<
 					}
 					return state;
 				});
-			} catch (err) {
+			} catch {
 				if (compareValue) setFieldInput(compareValue);
 			}
 		},
@@ -653,31 +681,28 @@ const AuxiliaryDisplayField: FC = () => {
 
 	return (
 		<Grid columns="1fr auto" gapX="4" gapY="1" flexGrow="1" align="center">
-			<Text size="1" asChild>
-				<label htmlFor={idTranslation}>
+			<Text size="1" asChild
+			><label htmlFor={idTranslation}>
 					{t("ribbonBar.editMode.showTranslation", "显示翻译行")}
-				</label>
-			</Text>
+				</label></Text>
 			<Checkbox
 				id={idTranslation}
 				checked={showTranslation}
 				onCheckedChange={(c) => setShowTranslation(Boolean(c))}
 			/>
-			<Text size="1" asChild>
-				<label htmlFor={idRomanization}>
+			<Text size="1" asChild
+			><label htmlFor={idRomanization}>
 					{t("ribbonBar.editMode.showRomanization", "显示音译行")}
-				</label>
-			</Text>
+				</label></Text>
 			<Checkbox
 				id={idRomanization}
 				checked={showRomanization}
 				onCheckedChange={(c) => setShowRomanization(Boolean(c))}
 			/>
-			<Text size="1" asChild>
-				<label htmlFor={idPerWord}>
+			<Text size="1" asChild
+			><label htmlFor={idPerWord}>
 					{t("ribbonBar.editMode.showWordRomanizationInput", "显示逐字音译")}
-				</label>
-			</Text>
+				</label></Text>
 			<Checkbox
 				id={idPerWord}
 				checked={showWordRomanizationInput}
@@ -686,6 +711,74 @@ const AuxiliaryDisplayField: FC = () => {
 		</Grid>
 	);
 };
+
+function AutoRomanizeButton() {
+	const { t } = useTranslation();
+	const [isConverting, setIsConverting] = useState(false);
+	const romanizationMode = useAtomValue(romanizationModeAtom);
+	const globalRomanLanguage = useAtomValue(globalRomanLanguageAtom);
+	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
+	const selectedLines = useAtomValue(selectedLinesAtom);
+	const store = useStore();
+
+	const handleAutoRomanize = async () => {
+		setIsConverting(true);
+		try {
+			const lyricState = store.get(lyricLinesAtom);
+			const linesToConvert =
+				selectedLines.size > 0
+					? lyricState.lyricLines.filter((l) => selectedLines.has(l.id))
+					: lyricState.lyricLines;
+
+			const inputs = linesToConvert.map((line) => {
+				const wordsJoined = line.words.map((w) => w.word).join(" ");
+				// Use the joined words or the raw fallback if not segmented
+				const text = (wordsJoined || "").trim();
+				const lang =
+					romanizationMode === "global"
+						? globalRomanLanguage
+						: line.language && line.language !== "auto"
+							? line.language
+							: globalRomanLanguage;
+				return { id: line.id, text, lang };
+			});
+
+			const results = await Promise.all(
+				inputs.map((input) => romanizeText(input.text, input.lang)),
+			);
+
+			const updateMap = new Map();
+			for (let i = 0; i < inputs.length; i++) {
+				updateMap.set(inputs[i].id, results[i]);
+			}
+
+			editLyricLines((state) => {
+				for (const line of state.lyricLines) {
+					if (updateMap.has(line.id)) {
+						line.romanLyric = updateMap.get(line.id);
+					}
+				}
+			});
+		} catch (e) {
+			console.error(e);
+		} finally {
+			setIsConverting(false);
+		}
+	};
+
+	return (
+		<Button
+			size="1"
+			variant="soft"
+			onClick={handleAutoRomanize}
+			disabled={isConverting}
+		>
+			{isConverting
+				? t("ribbonBar.editMode.converting", "Converting...")
+				: t("ribbonBar.editMode.autoRomanize", "Auto-Romanize")}
+		</Button>
+	);
+}
 
 export const EditModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 	(_props, ref) => {
@@ -819,6 +912,11 @@ export const EditModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 							formatter={(v) => v}
 							textFieldStyle={{ width: "20em" }}
 						/>
+					</Grid>
+				</RibbonSection>
+				<RibbonSection label={t("ribbonBar.editMode.actions", "Actions")}>
+					<Grid columns="1" gap="1" gapY="1" flexGrow="1" align="center">
+						<AutoRomanizeButton />
 					</Grid>
 				</RibbonSection>
 				<RibbonSection label={t("ribbonBar.editMode.layoutMode", "布局模式")}>

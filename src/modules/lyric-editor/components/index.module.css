@@ -137,7 +137,7 @@
 }
 
 .startTime {
-	background-color: var(--green-a4);
+	background-color: var(--ruby-a4);
 }
 
 .endTime {
@@ -305,6 +305,16 @@
 .lyricWord.error.selected:hover,
 .lyricLine.error.selected:hover {
 	background-color: var(--red-a4);
+}
+
+.lyricWord.grammarWarning,
+.lyricLine.grammarWarning {
+	box-shadow: 0 0 0 2px var(--orange-a10);
+}
+
+.lyricWord.grammarWarning:hover,
+.lyricLine.grammarWarning:hover {
+	background-color: var(--orange-a2);
 }
 
 :global(.radix-themes.light) .lyricWord.selected {

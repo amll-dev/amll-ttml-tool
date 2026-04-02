@@ -18,8 +18,7 @@ export const SuspensePlaceHolder = (props: PropsWithChildren) => {
 					direction="column"
 					gap="2"
 					asChild
-				>
-					<motion.div
+				><motion.div
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -28,8 +27,7 @@ export const SuspensePlaceHolder = (props: PropsWithChildren) => {
 						<Text color="gray" size="1">
 							{t("ribbonBar.loading", "面板载入中...")}
 						</Text>
-					</motion.div>
-				</Flex>
+					</motion.div></Flex>
 			}
 		>
 			{props.children}

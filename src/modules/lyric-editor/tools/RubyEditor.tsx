@@ -1,12 +1,32 @@
-import { Add20Regular, TranslateRegular, Warning48Color } from "@fluentui/react-icons";
-import { Button, Dialog, Flex, IconButton, Text, TextField } from "@radix-ui/themes";
+import {
+	Add20Regular,
+	TranslateRegular,
+	Warning48Color,
+} from "@fluentui/react-icons";
+import {
+	Button,
+	Dialog,
+	Flex,
+	IconButton,
+	Text,
+	TextField,
+} from "@radix-ui/themes";
 import classNames from "classnames";
 import { type Atom, useAtomValue, useStore } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
-import { type ComponentPropsWithoutRef, useCallback, useRef, useState } from "react";
+import {
+	type ComponentPropsWithoutRef,
+	useCallback,
+	useRef,
+	useState,
+} from "react";
 import { recalculateWordTime } from "$/modules/segmentation/utils/segmentation.ts";
 import { useSegmentationConfig } from "$/modules/segmentation/utils/useSegmentationConfig.ts";
-import { lyricLinesAtom, projectIdAtom, rubyWarningShownProjectIdsAtom } from "$/states/main.ts";
+import {
+	lyricLinesAtom,
+	projectIdAtom,
+	rubyWarningShownProjectIdsAtom,
+} from "$/states/main.ts";
 import type { LyricWord } from "$/types/ttml.ts";
 import styles from "../components/index.module.css";
 
@@ -20,7 +40,8 @@ const AutoSizeTextField = ({
 }: ComponentPropsWithoutRef<typeof TextField.Root> & {
 	inputRef?: React.Ref<HTMLInputElement>;
 }) => {
-	const valueString = value === undefined || value === null ? "" : String(value);
+	const valueString =
+		value === undefined || value === null ? "" : String(value);
 	const mirrorText =
 		valueString.length > 0
 			? valueString
@@ -150,10 +171,7 @@ export const RubyEditor = ({
 							prevRuby.startTime,
 							currentRuby.startTime,
 						);
-						prevRuby.endTime = Math.max(
-							prevRuby.endTime,
-							currentRuby.endTime,
-						);
+						prevRuby.endTime = Math.max(prevRuby.endTime, currentRuby.endTime);
 						word.ruby.splice(index, 1);
 						break;
 					}
@@ -243,8 +261,7 @@ export const RubyEditor = ({
 								你正在使用测试中的
 								<Text as="span" weight="bold">
 									{" "}
-									注音
-									{" "}
+									注音{" "}
 								</Text>
 								功能
 							</Text>
@@ -254,56 +271,47 @@ export const RubyEditor = ({
 							<Text size="4" align="center">
 								如果仍要在不支持的解析器中使用，可能会出现缺少文字等现象
 							</Text>
-							<Dialog.Close>
-								<Button>我已了解</Button>
+							<Dialog.Close><Button>我已了解</Button>
 							</Dialog.Close>
 						</Flex>
 					</Flex>
 				</Dialog.Content>
 			</Dialog.Root>
 			<span className={classNames(styles.rubyEditor, className)}>
-			{showIcon && (
-				<IconButton
-					size="1"
-					variant="soft"
-					onClick={applyRubyToAllSameWords}
-				>
-					<TranslateRegular />
-				</IconButton>
-			)}
-			{rubyWords.map((rubyWord, index) => (
-				<AutoSizeTextField
-					key={`${word.id}-ruby-${index}`}
-					size="1"
-					inputRef={(el) => {
-						inputRefs.current[index] = el;
-					}}
-					value={rubyWord.word}
-					onChange={(evt) => updateRubyWord(index, evt.currentTarget.value)}
-					onKeyDown={(evt) => {
-						if (evt.key !== "Backspace") return;
-						const selectionStart = evt.currentTarget.selectionStart ?? 0;
-						const selectionEnd = evt.currentTarget.selectionEnd ?? 0;
-						const isAtStart = selectionStart === 0 && selectionEnd === 0;
-						if (isAtStart && index > 0) {
+				{showIcon && (
+					<IconButton size="1" variant="soft" onClick={applyRubyToAllSameWords}><TranslateRegular /></IconButton>
+				)}
+				{rubyWords.map((rubyWord, index) => (
+					<AutoSizeTextField
+						key={`${word.id}-ruby-${index}`}
+						size="1"
+						inputRef={(el) => {
+							inputRefs.current[index] = el;
+						}}
+						value={rubyWord.word}
+						onChange={(evt) => updateRubyWord(index, evt.currentTarget.value)}
+						onKeyDown={(evt) => {
+							if (evt.key !== "Backspace") return;
+							const selectionStart = evt.currentTarget.selectionStart ?? 0;
+							const selectionEnd = evt.currentTarget.selectionEnd ?? 0;
+							const isAtStart = selectionStart === 0 && selectionEnd === 0;
+							if (isAtStart && index > 0) {
+								evt.preventDefault();
+								mergeRubyWithPrevious(index);
+								return;
+							}
+							if (evt.currentTarget.value !== "") return;
 							evt.preventDefault();
-							mergeRubyWithPrevious(index);
-							return;
-						}
-						if (evt.currentTarget.value !== "") return;
-						evt.preventDefault();
-						removeRubyWord(index);
-						if (index > 0) {
-							requestAnimationFrame(() => {
-								inputRefs.current[index - 1]?.focus();
-							});
-						}
-					}}
-				/>
-			))}
-			<IconButton size="1" variant="soft" onClick={addRubyWord}>
-				<Add20Regular />
-			</IconButton>
+							removeRubyWord(index);
+							if (index > 0) {
+								requestAnimationFrame(() => {
+									inputRefs.current[index - 1]?.focus();
+								});
+							}
+						}}
+					/>
+				))}
+				<IconButton size="1" variant="soft" onClick={addRubyWord}><Add20Regular /></IconButton>
 			</span>
 		</>
 	);

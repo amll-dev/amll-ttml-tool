@@ -6,15 +6,15 @@ import { useTranslation } from "react-i18next";
 import saveFile from "save-file";
 import { uid } from "uid";
 import { useFileOpener } from "$/hooks/useFileOpener.ts";
+import { applyGeneratedRuby } from "$/modules/lyric-editor/utils/ruby-generator";
 import exportTTMLText from "$/modules/project/logic/ttml-writer";
-import { applyRomanizationWarnings } from "$/modules/segmentation/utils/Transliteration/roman-warning";
-import { predictLineRomanization } from "$/modules/segmentation/utils/Transliteration/distributor";
 import {
 	segmentLyricLines,
 	segmentWord,
 } from "$/modules/segmentation/utils/segmentation";
+import { predictLineRomanization } from "$/modules/segmentation/utils/Transliteration/distributor";
+import { applyRomanizationWarnings } from "$/modules/segmentation/utils/Transliteration/roman-warning";
 import { useSegmentationConfig } from "$/modules/segmentation/utils/useSegmentationConfig";
-import { applyGeneratedRuby } from "$/modules/lyric-editor/utils/ruby-generator";
 import {
 	advancedSegmentationDialogAtom,
 	confirmDialogAtom,
@@ -48,11 +48,7 @@ import {
 	undoableLyricLinesAtom,
 	undoLyricLinesAtom,
 } from "$/states/main.ts";
-import {
-	type LyricWord,
-	type LyricWordBase,
-	newLyricWord,
-} from "$/types/ttml";
+import { type LyricWord, type LyricWordBase, newLyricWord } from "$/types/ttml";
 import { error, log } from "$/utils/logging.ts";
 
 export const useTopMenuActions = () => {

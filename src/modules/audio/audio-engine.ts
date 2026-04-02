@@ -74,6 +74,7 @@ class AudioEngine extends EventTarget {
 		if (this._audioEl) return this._audioEl;
 		this._audioEl = document.createElement("audio");
 		this._audioEl.preload = "metadata";
+		this._audioEl.preservesPitch = false;
 		return this._audioEl;
 	}
 

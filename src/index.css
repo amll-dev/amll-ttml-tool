@@ -15,6 +15,45 @@
 .radix-themes {
 	--default-font-family:
 		"MiSans", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+	/* Enforce a deep bloody red background and tint all UI frames by overriding the gray scale with ruby */
+	--gray-1: var(--ruby-1);
+	--gray-2: var(--ruby-2);
+	--gray-3: var(--ruby-3);
+	--gray-4: var(--ruby-4);
+	--gray-5: var(--ruby-5);
+	--gray-6: var(--ruby-6);
+	--gray-7: var(--ruby-7);
+	--gray-8: var(--ruby-8);
+	--gray-9: var(--ruby-9);
+	--gray-10: var(--ruby-10);
+	--gray-11: var(--ruby-11);
+	--gray-12: var(--ruby-12);
+	--gray-a1: var(--ruby-a1);
+	--gray-a2: var(--ruby-a2);
+	--gray-a3: var(--ruby-a3);
+	--gray-a4: var(--ruby-a4);
+	--gray-a5: var(--ruby-a5);
+	--gray-a6: var(--ruby-a6);
+	--gray-a7: var(--ruby-a7);
+	--gray-a8: var(--ruby-a8);
+	--gray-a9: var(--ruby-a9);
+	--gray-a10: var(--ruby-a10);
+	/* Set a nice bloody dark red gradient background */
+	background: radial-gradient(
+		circle at top,
+		var(--ruby-3) 0%,
+		var(--ruby-1) 60%,
+		var(--ruby-1) 100%
+	);
+
+	/* Boost the accent colors so they intensely pop against the dark ruby background */
+	--accent-9: #ff0f39; /* vibrant neon red */
+	--accent-10: #ff3355; /* brighter hover red */
+	--accent-a3: rgba(255, 15, 57, 0.15);
+	--accent-a4: rgba(255, 15, 57, 0.25);
+	--accent-a5: rgba(255, 15, 57, 0.35);
+	--accent-a6: rgba(255, 15, 57, 0.45);
 }
 
 ::-webkit-scrollbar-track {
@@ -56,6 +95,6 @@
 }
 
 .amll-lyric-player {
-	margin: 0 !important;
-	padding: 0 !important;
+	margin: 0;
+	padding: 0;
 }

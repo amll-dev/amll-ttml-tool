@@ -321,8 +321,7 @@ export const AdvancedSegmentationDialog = memo(() => {
 										onValueChange={setLang}
 										disabled={isLoadingLang}
 									>
-										<Select.Trigger style={{ width: "100%" }} />
-										<Select.Content>
+										<Select.Trigger style={{ width: "100%" }} /><Select.Content>
 											{SUPPORTED_LANGUAGES.map((l) => (
 												<Select.Item key={l.value} value={l.value}>
 													{l.label}
@@ -564,8 +563,7 @@ export const AdvancedSegmentationDialog = memo(() => {
 				</Flex>
 
 				<Flex gap="3" mt="4" justify="end">
-					<Dialog.Close>
-						<Button variant="soft" color="gray">
+					<Dialog.Close><Button variant="soft" color="gray">
 							{t("common.cancel", "取消")}
 						</Button>
 					</Dialog.Close>

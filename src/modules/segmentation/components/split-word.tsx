@@ -290,8 +290,7 @@ export const SplitWordDialog = memo(() => {
 				</Flex>
 
 				<Flex justify="end" mt="4">
-					<Dialog.Close>
-						<Button onClick={handleSplit}>
+					<Dialog.Close><Button onClick={handleSplit}>
 							{t("splitWordDialog.actionButton", "执行")}
 						</Button>
 					</Dialog.Close>

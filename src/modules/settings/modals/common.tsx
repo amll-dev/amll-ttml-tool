@@ -12,7 +12,17 @@ import {
 	Timer24Regular,
 	TopSpeed24Regular,
 } from "@fluentui/react-icons";
-import { Box, Card, Flex, Heading, Select, Slider, Switch, Text, TextField } from "@radix-ui/themes";
+import {
+	Box,
+	Card,
+	Flex,
+	Heading,
+	Select,
+	Slider,
+	Switch,
+	Text,
+	TextField,
+} from "@radix-ui/themes";
 import { useAtom } from "jotai";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,13 +31,20 @@ import {
 	autosaveEnabledAtom,
 	autosaveIntervalAtom,
 	autosaveLimitAtom,
+	globalRomanLanguageAtom,
 	LayoutMode,
 	layoutModeAtom,
+	romanizationModeAtom,
 	SyncJudgeMode,
 	smartFirstWordAtom,
 	smartLastWordAtom,
 	syncJudgeModeAtom,
 } from "$/modules/settings/states";
+import {
+	enableUpcomingWordHighlightAtom,
+	upcomingWordHighlightColorAtom,
+	upcomingWordHighlightThresholdAtom,
+} from "$/modules/settings/states/sync";
 import {
 	KeyBindingTriggerMode,
 	keyBindingTriggerModeAtom,
@@ -52,6 +69,19 @@ export const SettingsCommonTab = () => {
 	const [autosaveEnabled, setAutosaveEnabled] = useAtom(autosaveEnabledAtom);
 	const [autosaveInterval, setAutosaveInterval] = useAtom(autosaveIntervalAtom);
 	const [autosaveLimit, setAutosaveLimit] = useAtom(autosaveLimitAtom);
+	const [enableUpcomingWordHighlight, setEnableUpcomingWordHighlight] = useAtom(
+		enableUpcomingWordHighlightAtom,
+	);
+	const [upcomingWordHighlightThreshold, setUpcomingWordHighlightThreshold] =
+		useAtom(upcomingWordHighlightThresholdAtom);
+	const [upcomingWordHighlightColor, setUpcomingWordHighlightColor] = useAtom(
+		upcomingWordHighlightColorAtom,
+	);
+
+	const [romanizationMode, setRomanizationMode] = useAtom(romanizationModeAtom);
+	const [globalRomanLanguage, setGlobalRomanLanguage] = useAtom(
+		globalRomanLanguageAtom,
+	);
 	const { t, i18n } = useTranslation();
 	const currentLanguage = i18n.resolvedLanguage || i18n.language;
 	const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
@@ -119,8 +149,7 @@ export const SettingsCommonTab = () => {
 										});
 									}}
 								>
-									<Select.Trigger />
-									<Select.Content>
+									<Select.Trigger /><Select.Content>
 										{languageOptions.map((code) => (
 											<Select.Item key={code} value={code}>
 												{getLanguageName(code, currentLanguage)}
@@ -157,8 +186,7 @@ export const SettingsCommonTab = () => {
 									value={layoutMode}
 									onValueChange={(v) => setLayoutMode(v as LayoutMode)}
 								>
-									<Select.Trigger />
-									<Select.Content>
+									<Select.Trigger /><Select.Content>
 										<Select.Item value={LayoutMode.Simple}>
 											{t(
 												"settings.common.layoutModeOptions.simple",
@@ -181,6 +209,93 @@ export const SettingsCommonTab = () => {
 				<SettingsCustomBackgroundCard
 					onOpen={() => setShowBackgroundSettings(true)}
 				/>
+			</Flex>
+
+			<Flex direction="column" gap="3">
+				<Heading size="4">
+					{t("settings.group.romanization", "Auto-Romanization")}
+				</Heading>
+
+				<Card>
+					<Flex gap="3" align="center">
+						<LocalLanguage24Regular />
+						<Box flexGrow="1">
+							<Flex align="center" justify="between" gap="4">
+								<Flex direction="column" gap="1">
+									<Text>
+										{t("settings.common.romanizationMode", "Romanization Mode")}
+									</Text>
+									<Text size="1" color="gray">
+										{t(
+											"settings.common.romanizationModeDesc",
+											"Use a global language or allow per-line selection",
+										)}
+									</Text>
+								</Flex>
+
+								<Select.Root
+									value={romanizationMode}
+									onValueChange={(v) =>
+										setRomanizationMode(v as "global" | "multi-lingual")
+									}
+								>
+									<Select.Trigger /><Select.Content>
+										<Select.Item value="global">
+											{t(
+												"settings.common.romanizationMode.global",
+												"Global Language Override",
+											)}
+										</Select.Item>
+										<Select.Item value="multi-lingual">
+											{t(
+												"settings.common.romanizationMode.multi",
+												"Multi-Lingual (Per-line)",
+											)}
+										</Select.Item>
+									</Select.Content>
+								</Select.Root>
+							</Flex>
+						</Box>
+					</Flex>
+				</Card>
+
+				{romanizationMode === "global" && (
+					<Card>
+						<Flex gap="3" align="center">
+							<LocalLanguage24Regular opacity={0.5} />
+							<Box flexGrow="1">
+								<Flex align="center" justify="between" gap="4">
+									<Flex direction="column" gap="1">
+										<Text>
+											{t(
+												"settings.common.globalRomanLanguage",
+												"Global Romanization Source Language",
+											)}
+										</Text>
+										<Text size="1" color="gray">
+											{t(
+												"settings.common.globalRomanLanguageDesc",
+												"The source language used for converting lyrics to romaji",
+											)}
+										</Text>
+									</Flex>
+
+									<Select.Root
+										value={globalRomanLanguage}
+										onValueChange={setGlobalRomanLanguage}
+									>
+										<Select.Trigger /><Select.Content>
+											<Select.Item value="ja">Japanese (Romaji)</Select.Item>
+											<Select.Item value="zh">Chinese (Pinyin)</Select.Item>
+											<Select.Item value="ko">Korean (Romaja)</Select.Item>
+											<Select.Item value="off">Disabled</Select.Item>
+										</Select.Content>
+									</Select.Root>
+								</Flex>
+							</Box>
+						</Flex>
+					</Card>
+				)}
 			</Flex>
 
 			<Flex direction="column" gap="3">
@@ -207,8 +322,7 @@ export const SettingsCommonTab = () => {
 									value={syncJudgeMode}
 									onValueChange={(v) => setSyncJudgeMode(v as SyncJudgeMode)}
 								>
-									<Select.Trigger />
-									<Select.Content>
+									<Select.Trigger /><Select.Content>
 										<Select.Item value={SyncJudgeMode.FirstKeyDownTime}>
 											{t(
 												"settings.common.syncJudgeModeOptions.firstKeyDown",
@@ -263,8 +377,7 @@ export const SettingsCommonTab = () => {
 										setKeyBindingTriggerMode(v as KeyBindingTriggerMode)
 									}
 								>
-									<Select.Trigger />
-									<Select.Content>
+									<Select.Trigger /><Select.Content>
 										<Select.Item value={KeyBindingTriggerMode.KeyDown}>
 											{t(
 												"settings.common.keyBindingTriggerOptions.keyDown",
@@ -336,6 +449,88 @@ export const SettingsCommonTab = () => {
 							</Box>
 						</Flex>
 					</Text>
+				</Card>
+			</Flex>
+
+			<Flex direction="column" gap="3">
+				<Heading size="4">
+					{t("settings.group.timingHighlight", "Visual Timing Cue (Sync)")}
+				</Heading>
+				<Card>
+					<Text as="label">
+						<Flex gap="3" align="center">
+							<Timer24Regular />
+							<Box flexGrow="1">
+								<Flex gap="2" align="center" justify="between">
+									<Flex direction="column" gap="1">
+										<Text>
+											{t(
+												"settings.common.enableUpcomingWordHighlight",
+												"Enable Upcoming Word Pre-Highlight",
+											)}
+										</Text>
+										<Text size="1" color="gray">
+											{t(
+												"settings.common.enableUpcomingWordHighlightDesc",
+												"Fades in a highlight color shortly before a word plays during Sync mode to improve precision.",
+											)}
+										</Text>
+									</Flex>
+									<Switch
+										checked={enableUpcomingWordHighlight}
+										onCheckedChange={setEnableUpcomingWordHighlight}
+									/>
+								</Flex>
+							</Box>
+						</Flex>
+					</Text>
+				</Card>
+				<Card>
+					<Flex gap="3" align="center">
+						<Timer24Regular />
+						<Box flexGrow="1">
+							<Flex direction="column" gap="2" align="start">
+								<Text>
+									{t(
+										"settings.common.upcomingWordHighlightThreshold",
+										"Pre-Highlight Time Threshold (ms)",
+									)}
+								</Text>
+								<TextField.Root
+									type="number"
+									disabled={!enableUpcomingWordHighlight}
+									value={upcomingWordHighlightThreshold}
+									onChange={(e) =>
+										setUpcomingWordHighlightThreshold(
+											Math.max(0, Number.parseInt(e.target.value, 10) || 0),
+										)
+									}
+								/>
+							</Flex>
+						</Box>
+					</Flex>
+				</Card>
+				<Card>
+					<Flex gap="3" align="center">
+						<ContentView24Regular />
+						<Box flexGrow="1">
+							<Flex direction="column" gap="2" align="start">
+								<Text>
+									{t(
+										"settings.common.upcomingWordHighlightColor",
+										"Highlight Color (CSS Value)",
+									)}
+								</Text>
+								<TextField.Root
+									disabled={!enableUpcomingWordHighlight}
+									value={upcomingWordHighlightColor}
+									onChange={(e) =>
+										setUpcomingWordHighlightColor(e.target.value)
+									}
+								/>
+							</Flex>
+						</Box>
+					</Flex>
 				</Card>
 			</Flex>
 

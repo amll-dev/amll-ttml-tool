@@ -17,7 +17,16 @@ import {
 	SplitVerticalRegular,
 	TaskListLtrRegular,
 } from "@fluentui/react-icons";
-import { ContextMenu, IconButton, TextField } from "@radix-ui/themes";
+import {
+	Button,
+	ContextMenu,
+	Dialog,
+	Flex,
+	Grid,
+	IconButton,
+	Text,
+	TextField,
+} from "@radix-ui/themes";
 import classNames from "classnames";
 import { type Atom, atom, useAtomValue, useSetAtom, useStore } from "jotai";
 import { useSetImmerAtom } from "jotai-immer";
@@ -40,33 +49,42 @@ import {
 	displayRomanizationInSyncAtom,
 	highlightActiveWordAtom,
 	highlightErrorsAtom,
+	highlightGrammarWarningsAtom,
+	ignoredGrammarWordsAtom,
 	LayoutMode,
 	layoutModeAtom,
 	showTimestampsAtom,
 } from "$/modules/settings/states/index.ts";
-import { visualizeTimestampUpdateAtom } from "$/modules/settings/states/sync.ts";
+import {
+	enableUpcomingWordHighlightAtom,
+	upcomingWordHighlightColorAtom,
+	upcomingWordHighlightThresholdAtom,
+	visualizeTimestampUpdateAtom,
+} from "$/modules/settings/states/sync.ts";
 import { splitWordDialogAtom } from "$/states/dialogs.ts";
 import {
 	editingWordStateAtom,
 	lyricLinesAtom,
+	allLyricsWordsAtom,
 	selectedLinesAtom,
 	selectedWordsAtom,
 	showEndTimeAsDurationAtom,
 	ToolMode,
 	toolModeAtom,
 } from "$/states/main.ts";
-import {
-	type LyricLine,
-	type LyricWord,
-	newLyricWord,
-} from "$/types/ttml.ts";
+import { type LyricLine, type LyricWord, newLyricWord } from "$/types/ttml.ts";
 import { msToTimestamp, parseTimespan } from "$/utils/timestamp.ts";
-import { normalizeLineTime } from "../utils/normalize-line-time.ts";
+import { RubyEditor } from "../tools/RubyEditor.tsx";
+import {
+	collectWarningsWithSuggestions,
+	getGrammarSuggestions,
+	isEnglishLine,
+} from "../utils/grammar-warning.ts";
 import { buildRubySelectionId } from "../utils/lyric-states.ts";
+import { normalizeLineTime } from "../utils/normalize-line-time.ts";
 import styles from "./index.module.css";
 import { LyricLineMenu } from "./lyric-line-menu.tsx";
 import { LyricWordMenu } from "./lyric-word-menu";
-import { RubyEditor } from "../tools/RubyEditor.tsx";
 
 const isDraggingAtom = atom(false);
 
@@ -90,7 +108,11 @@ const parseRubyShortcut = (value: string) => {
 };
 
 const getDisplayWordText = (
-	t: (key: string, defaultValue: string, options?: { count?: number }) => string,
+	t: (
+		key: string,
+		defaultValue: string,
+		options?: { count?: number },
+	) => string,
 	word: string,
 	isWordBlank: boolean,
 	romanWord?: string,
@@ -111,22 +133,25 @@ type LyricWordViewEditProps = {
 	wordIndex: number;
 	line: LyricLine;
 	lineIndex: number;
+	grammarWarning?: boolean;
+};
+
+type LyricWordViewEditSpanProps = {
+	wordAtom: Atom<LyricWord>;
+	wordIndex: number;
+	line: LyricLine;
+	className?: string;
+	onDoubleClick?: () => void;
 };
 
 const LyricWordViewEditSpan = ({
 	wordAtom,
 	wordIndex,
 	line,
-	lineIndex,
 	className,
 	children,
 	onDoubleClick,
-}: PropsWithChildren<
-	LyricWordViewEditProps & {
-		className?: string;
-		onDoubleClick?: () => void;
-	}
->) => {
+}: PropsWithChildren<LyricWordViewEditSpanProps>) => {
 	const word = useAtomValue(wordAtom);
 	const store = useStore();
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
@@ -140,6 +165,7 @@ const LyricWordViewEditSpan = ({
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const toolMode = useAtomValue(toolModeAtom);
 	const blockDragRef = useRef(false);
+	const lastClickTimeRef = useRef(0);
 
 	function onWordSelect(evt: MouseEvent<HTMLSpanElement>) {
 		if (evt.ctrlKey || evt.metaKey) {
@@ -188,149 +214,122 @@ const LyricWordViewEditSpan = ({
 	}
 
 	return (
-		<ContextMenu.Root
-			onOpenChange={(open) => {
-				if (!open) return;
+		<span
+			draggable={toolMode === ToolMode.Edit}
+			onPointerDown={(evt) => {
+				blockDragRef.current =
+					(evt.target as HTMLElement | null)?.tagName === "INPUT";
+			}}
+			onPointerUp={() => {
+				blockDragRef.current = false;
+			}}
+			onDragStart={(evt) => {
+				if (blockDragRef.current) {
+					blockDragRef.current = false;
+					evt.preventDefault();
+					evt.stopPropagation();
+					return;
+				}
+				if (!isWordSelected) onWordSelect(evt);
+				evt.dataTransfer.effectAllowed = "copyMove";
+				evt.dataTransfer.dropEffect = "move";
+				store.set(isDraggingAtom, true);
+				evt.stopPropagation();
+			}}
+			onDragEnd={() => {
+				store.set(isDraggingAtom, false);
+				blockDragRef.current = false;
+			}}
+			onDragOver={(evt) => {
+				if (!store.get(isDraggingAtom)) return;
 				if (isWordSelected) return;
-				setSelectedWords((state) => {
-					state.clear();
-					state.add(word.id);
-				});
-				setSelectedLines((state) => {
-					state.clear();
-					state.add(line.id);
+				evt.preventDefault();
+				evt.dataTransfer.dropEffect = "move";
+				const rect = evt.currentTarget.getBoundingClientRect();
+				const innerX = evt.clientX - rect.left;
+				if (innerX < rect.width / 2) {
+					evt.currentTarget.classList.add(styles.dropLeft);
+					evt.currentTarget.classList.remove(styles.dropRight);
+				} else {
+					evt.currentTarget.classList.remove(styles.dropLeft);
+					evt.currentTarget.classList.add(styles.dropRight);
+				}
+				const isCopyingWords = evt.ctrlKey || evt.metaKey;
+				evt.dataTransfer.dropEffect = isCopyingWords ? "copy" : "move";
+			}}
+			onDrop={(evt) => {
+				evt.currentTarget.classList.remove(styles.dropLeft);
+				evt.currentTarget.classList.remove(styles.dropRight);
+				if (!store.get(isDraggingAtom)) return;
+				if (isWordSelected) return;
+
+				const rect = evt.currentTarget.getBoundingClientRect();
+				const innerX = evt.clientX - rect.left;
+				const insertRight = innerX > rect.width / 2;
+
+				const isCopyingWords = evt.ctrlKey || evt.metaKey;
+				editLyricLines((state) => {
+					let collectedWords: LyricWord[] = [];
+					for (const line of state.lyricLines) {
+						const words = line.words.filter((w) => selectedWords.has(w.id));
+						collectedWords.push(...words);
+						if (!isCopyingWords) {
+							const deletedAtBounds =
+								line.words.length > 0 &&
+								(selectedWords.has(line.words[0].id) ||
+									selectedWords.has(line.words[line.words.length - 1].id));
+							line.words = line.words.filter((w) => !selectedWords.has(w.id));
+							if (deletedAtBounds) normalizeLineTime(line);
+						}
+					}
+					const targetLine = state.lyricLines.find(({ id }) => id === line.id);
+					if (!targetLine) throw new Error("Target line not found");
+					const targetIndex = targetLine.words.findIndex(
+						(w) => w.id === word.id,
+					);
+					if (targetIndex < 0) throw new Error("Target word not found");
+					if (isCopyingWords) {
+						collectedWords = collectedWords.map((w) => ({
+							...w,
+							id: newLyricWord().id,
+						}));
+						setSelectedWords((v) => {
+							v.clear();
+							for (const w of collectedWords) {
+								v.add(w.id);
+							}
+						});
+					}
+					const insertPosition = targetIndex + (insertRight ? 1 : 0);
+					const insertedAtBounds =
+						insertPosition === 0 || insertPosition === targetLine.words.length;
+					targetLine.words.splice(insertPosition, 0, ...collectedWords);
+					if (insertedAtBounds) normalizeLineTime(targetLine);
 				});
 			}}
+			onDragLeave={(evt) => {
+				evt.currentTarget.classList.remove(styles.dropLeft);
+				evt.currentTarget.classList.remove(styles.dropRight);
+			}}
+			className={className}
+			onClick={(evt) => {
+				const now = Date.now();
+				const wasAlreadySelected = isWordSelected && selectedWords.size === 1;
+				const isSelectionClick = !evt.ctrlKey && !evt.metaKey && !evt.shiftKey;
+				const clickInterval = now - lastClickTimeRef.current;
+				lastClickTimeRef.current = now;
+
+				evt.stopPropagation();
+				evt.preventDefault();
+				onWordSelect(evt);
+
+				if (wasAlreadySelected && isSelectionClick && clickInterval > 100) {
+					onDoubleClick?.();
+				}
+			}}
 		>
-			<ContextMenu.Trigger>
-				<span
-					draggable={toolMode === ToolMode.Edit}
-					onPointerDown={(evt) => {
-						blockDragRef.current =
-							(evt.target as HTMLElement | null)?.tagName === "INPUT";
-					}}
-					onPointerUp={() => {
-						blockDragRef.current = false;
-					}}
-					onDragStart={(evt) => {
-						if (blockDragRef.current) {
-							blockDragRef.current = false;
-							evt.preventDefault();
-							evt.stopPropagation();
-							return;
-						}
-						if (!isWordSelected) onWordSelect(evt);
-						evt.dataTransfer.effectAllowed = "copyMove";
-						evt.dataTransfer.dropEffect = "move";
-						store.set(isDraggingAtom, true);
-						evt.stopPropagation();
-					}}
-					onDragEnd={() => {
-						store.set(isDraggingAtom, false);
-						blockDragRef.current = false;
-					}}
-					onDragOver={(evt) => {
-						if (!store.get(isDraggingAtom)) return;
-						if (isWordSelected) return;
-						evt.preventDefault();
-						evt.dataTransfer.dropEffect = "move";
-						const rect = evt.currentTarget.getBoundingClientRect();
-						const innerX = evt.clientX - rect.left;
-						if (innerX < rect.width / 2) {
-							evt.currentTarget.classList.add(styles.dropLeft);
-							evt.currentTarget.classList.remove(styles.dropRight);
-						} else {
-							evt.currentTarget.classList.remove(styles.dropLeft);
-							evt.currentTarget.classList.add(styles.dropRight);
-						}
-						const isCopyingWords = evt.ctrlKey || evt.metaKey;
-						evt.dataTransfer.dropEffect = isCopyingWords ? "copy" : "move";
-					}}
-					onDrop={(evt) => {
-						evt.currentTarget.classList.remove(styles.dropLeft);
-						evt.currentTarget.classList.remove(styles.dropRight);
-						if (!store.get(isDraggingAtom)) return;
-						if (isWordSelected) return;
-
-						const rect = evt.currentTarget.getBoundingClientRect();
-						const innerX = evt.clientX - rect.left;
-						const insertRight = innerX > rect.width / 2;
-
-						const isCopyingWords = evt.ctrlKey || evt.metaKey;
-						editLyricLines((state) => {
-							let collectedWords: LyricWord[] = [];
-							for (const line of state.lyricLines) {
-								const words = line.words.filter((w) => selectedWords.has(w.id));
-								collectedWords.push(...words);
-								if (!isCopyingWords) {
-									const deletedAtBounds =
-										line.words.length > 0 &&
-										(selectedWords.has(line.words[0].id) ||
-											selectedWords.has(line.words[line.words.length - 1].id));
-									line.words = line.words.filter(
-										(w) => !selectedWords.has(w.id),
-									);
-									if (deletedAtBounds) normalizeLineTime(line);
-								}
-							}
-							const targetLine = state.lyricLines.find(
-								({ id }) => id === line.id,
-							);
-							if (!targetLine) throw new Error("Target line not found");
-							const targetIndex = targetLine.words.findIndex(
-								(w) => w.id === word.id,
-							);
-							if (targetIndex < 0) throw new Error("Target word not found");
-							if (isCopyingWords) {
-								collectedWords = collectedWords.map((w) => ({
-									...w,
-									id: newLyricWord().id,
-								}));
-								setSelectedWords((v) => {
-									v.clear();
-									for (const w of collectedWords) {
-										v.add(w.id);
-									}
-								});
-							}
-							const insertPosition = targetIndex + (insertRight ? 1 : 0);
-							const insertedAtBounds =
-								insertPosition === 0 ||
-								insertPosition === targetLine.words.length;
-							targetLine.words.splice(insertPosition, 0, ...collectedWords);
-							if (insertedAtBounds) normalizeLineTime(targetLine);
-						});
-					}}
-					onDragLeave={(evt) => {
-						evt.currentTarget.classList.remove(styles.dropLeft);
-						evt.currentTarget.classList.remove(styles.dropRight);
-					}}
-					className={className}
-					onDoubleClick={onDoubleClick}
-					onClick={(evt) => {
-						console.log("[LyricWord] click", {
-							button: evt.button,
-							target: (evt.target as HTMLElement | null)?.tagName,
-							toolMode,
-							isWordSelected,
-						});
-						evt.stopPropagation();
-						evt.preventDefault();
-						onWordSelect(evt);
-					}}
-				>
-					{children}
-				</span>
-			</ContextMenu.Trigger>
-			<ContextMenu.Content>
-				<LyricWordMenu
-					wordAtom={wordAtom}
-					wordIndex={wordIndex}
-					lineIndex={lineIndex}
-				/>
-				<LyricLineMenu lineIndex={lineIndex} />
-			</ContextMenu.Content>
-		</ContextMenu.Root>
+			{children}
+		</span>
 	);
 };
 
@@ -432,13 +431,17 @@ const LyricWordViewEditAdvance = ({
 	wordIndex,
 	line,
 	lineIndex,
+	grammarWarning,
 }: LyricWordViewEditProps) => {
 	const store = useStore();
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 	const setOpenSplitWordDialog = useSetAtom(splitWordDialogAtom);
 	const setSplitState = useSetAtom(editingWordStateAtom);
+	const setSelectedLines = useSetImmerAtom(selectedLinesAtom);
+	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const currentWord = useAtomValue(wordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
+	const highlightGrammarWarnings = useAtomValue(highlightGrammarWarningsAtom);
 	const isWordSelectedAtom = useMemo(
 		() => atom((get) => get(selectedWordsAtom).has(get(wordAtom).id)),
 		[wordAtom],
@@ -466,23 +469,46 @@ const LyricWordViewEditAdvance = ({
 				isWordBlank && styles.blank,
 				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
+				grammarWarning && highlightGrammarWarnings && styles.grammarWarning,
 			),
-		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
+		[
+			isWordBlank,
+			isWordSelected,
+			showRubyEditor,
+			hasError,
+			toolMode,
+			grammarWarning,
+			highlightGrammarWarnings,
+		],
 	);
 
 	return (
-		<ContextMenu.Root>
-			<ContextMenu.Trigger>
-				<LyricWordViewEditSpan
+		<ContextMenu.Root
+			onOpenChange={(open) => {
+				if (!open) return;
+				if (isWordSelected) return;
+				setSelectedWords((state) => {
+					state.clear();
+					state.add(currentWord.id);
+				});
+				setSelectedLines((state) => {
+					state.clear();
+					state.add(line.id);
+				});
+			}}
+		>
+			<ContextMenu.Trigger><LyricWordViewEditSpan
 					wordAtom={wordAtom}
 					wordIndex={wordIndex}
-					lineIndex={lineIndex}
 					className={className}
 					line={line}
+					onDoubleClick={() => {
+						// Grammar actions disabled in Edit mode
+					}}
 				>
 					<WordEditField
 						size="1"
-						color="green"
+						color="ruby"
 						wordAtom={wordAtom}
 						fieldName="startTime"
 						formatter={msToTimestamp}
@@ -491,9 +517,7 @@ const LyricWordViewEditAdvance = ({
 							minWidth: "0",
 						}}
 					>
-						<TextField.Slot>
-							<PaddingLeftRegular />
-						</TextField.Slot>
+						<TextField.Slot><PaddingLeftRegular /></TextField.Slot>
 					</WordEditField>
 					<div className={styles.advanceBar}>
 						<IconButton
@@ -510,7 +534,7 @@ const LyricWordViewEditAdvance = ({
 						>
 							<CutRegular />
 						</IconButton>
-					<WordEditField
+						<WordEditField
 							size="1"
 							wordAtom={wordAtom}
 							fieldName="word"
@@ -556,9 +580,7 @@ const LyricWordViewEditAdvance = ({
 							minWidth: "0",
 						}}
 					>
-						<TextField.Slot>
-							<PaddingRightRegular />
-						</TextField.Slot>
+						<TextField.Slot><PaddingRightRegular /></TextField.Slot>
 					</WordEditField>
 					<div className={styles.advanceBar}>
 						<WordEditField
@@ -573,9 +595,7 @@ const LyricWordViewEditAdvance = ({
 								minWidth: "0",
 							}}
 						>
-							<TextField.Slot>
-								<SplitVerticalRegular />
-							</TextField.Slot>
+							<TextField.Slot><SplitVerticalRegular /></TextField.Slot>
 						</WordEditField>
 						<IconButton
 							variant="soft"
@@ -611,6 +631,7 @@ const LyricWorldViewEdit = ({
 	wordIndex,
 	line,
 	lineIndex,
+	grammarWarning,
 }: LyricWordViewEditProps) => {
 	const { t } = useTranslation();
 	const word = useAtomValue(wordAtom);
@@ -624,6 +645,7 @@ const LyricWorldViewEdit = ({
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const [editing, setEditing] = useState(false);
 	const toolMode = useAtomValue(toolModeAtom);
+	const highlightGrammarWarnings = useAtomValue(highlightGrammarWarningsAtom);
 	const isWordBlank = useWordBlank(word.word);
 	const displayWord = getDisplayWordText(t, word.word, isWordBlank);
 	const showRubyEditor = useMemo(() => word.ruby !== undefined, [word.ruby]);
@@ -642,10 +664,18 @@ const LyricWorldViewEdit = ({
 				isWordBlank && styles.blank,
 				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
+				grammarWarning && highlightGrammarWarnings && styles.grammarWarning,
 			),
-		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
+		[
+			isWordBlank,
+			isWordSelected,
+			showRubyEditor,
+			hasError,
+			toolMode,
+			grammarWarning,
+			highlightGrammarWarnings,
+		],
 	);
-
 	const onEnter = useCallback(
 		(evt: SyntheticEvent<HTMLInputElement>) => {
 			setEditing(false);
@@ -695,14 +725,13 @@ const LyricWorldViewEdit = ({
 				});
 			}}
 		>
-			<ContextMenu.Trigger>
-				<LyricWordViewEditSpan
+			<ContextMenu.Trigger><LyricWordViewEditSpan
 					wordAtom={wordAtom}
 					wordIndex={wordIndex}
-					lineIndex={lineIndex}
 					className={className}
 					line={line}
 					onDoubleClick={() => {
+						// Open inline editor directly (grammar actions disabled in Edit mode)
 						setEditing(true);
 					}}
 				>
@@ -731,7 +760,27 @@ const LyricSyncWordView: FC<{
 	endTime: number;
 	displayWord: string;
 	isWordBlank: boolean;
-}> = ({ syncId, line, startTime, endTime, displayWord, isWordBlank }) => {
+	wordIndex: number;
+	setCorrectionDialog: (dialog: {
+		open: boolean;
+		wordIndex: number;
+		currentWord: string;
+		suggestions: string[];
+	} | null) => void;
+	handleWordUpdate: (wordIndex: number, newWord: string) => void;
+	allWordsInLyrics: Set<string>;
+}> = ({
+	syncId,
+	line,
+	startTime,
+	endTime,
+	displayWord,
+	isWordBlank,
+	wordIndex,
+	setCorrectionDialog,
+	handleWordUpdate,
+	allWordsInLyrics,
+}) => {
 	const isWordSelectedAtom = useMemo(
 		() => atom((get) => get(selectedWordsAtom).has(syncId)),
 		[syncId],
@@ -752,11 +801,90 @@ const LyricSyncWordView: FC<{
 	const showTimestamps = useAtomValue(showTimestampsAtom);
 	const showEndTimeAsDuration = useAtomValue(showEndTimeAsDurationAtom);
 	const highlightErrors = useAtomValue(highlightErrorsAtom);
+	const highlightGrammarWarnings = useAtomValue(highlightGrammarWarningsAtom);
+	const ignoredGrammarWords = useAtomValue(ignoredGrammarWordsAtom);
 	const highlightActiveWord = useAtomValue(highlightActiveWordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
+	const grammarLineIsEnglish = useMemo(() => isEnglishLine(line), [line]);
+	const ignoredWordsSet = useMemo(
+		() => new Set(ignoredGrammarWords),
+		[ignoredGrammarWords],
+	);
+	const grammarWarningSet = useMemo(
+		() =>
+			grammarLineIsEnglish
+				? collectWarningsWithSuggestions(
+						line,
+						ignoredWordsSet,
+						allWordsInLyrics,
+					)
+				: new Set<string>(),
+		[line, grammarLineIsEnglish, ignoredWordsSet, allWordsInLyrics],
+	);
+	const hasGrammarWarning = grammarWarningSet.has(syncId);
+
+	const store = useStore();
+	const enableUpcomingWordHighlight = useAtomValue(
+		enableUpcomingWordHighlightAtom,
+	);
+	const upcomingWordHighlightColor = useAtomValue(
+		upcomingWordHighlightColorAtom,
+	);
+	const upcomingWordHighlightThreshold = useAtomValue(
+		upcomingWordHighlightThresholdAtom,
+	);
 
 	const startTimeRef = useRef<HTMLDivElement>(null);
 	const endTimeRef = useRef<HTMLDivElement>(null);
+	const ambientHighlightRef = useRef<HTMLDivElement>(null);
+	const lastClickTimeRef = useRef(0);
+
+	// Optimized render loop for pre-playback word ambient highlighting
+	useEffect(() => {
+		if (!enableUpcomingWordHighlight || !ambientHighlightRef.current) return;
+
+		const updateHighlight = () => {
+			if (!ambientHighlightRef.current) return;
+			const currentTime = store.get(currentTimeAtom);
+			const delta = startTime - currentTime;
+			const threshold = upcomingWordHighlightThreshold;
+
+			const isBlueActive =
+				ambientHighlightRef.current.parentElement?.classList.contains(
+					styles.active,
+				);
+
+			// Extend the highlight window by 50ms to sync with the React blue highlight render delay
+			if (
+				delta > -50 &&
+				!isBlueActive &&
+				(threshold <= 0 || delta <= threshold)
+			) {
+				// Cap effective delta at 0 so opacity stays at maximum (0.75) during the 50ms delay window
+				const effectiveDelta = Math.max(0, delta);
+				const opacity =
+					threshold > 0 ? 0.75 * (1 - effectiveDelta / threshold) : 0.75;
+				ambientHighlightRef.current.style.transition = "none";
+				ambientHighlightRef.current.style.opacity = opacity.toFixed(3);
+				ambientHighlightRef.current.style.backgroundColor =
+					upcomingWordHighlightColor;
+			} else {
+				ambientHighlightRef.current.style.transition = "none";
+				ambientHighlightRef.current.style.opacity = "0";
+			}
+		};
+
+		// Run immediately to establish initial state without waiting for playback
+		updateHighlight();
+
+		return store.sub(currentTimeAtom, updateHighlight);
+	}, [
+		enableUpcomingWordHighlight,
+		upcomingWordHighlightColor,
+		upcomingWordHighlightThreshold,
+		startTime,
+		store,
+	]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: 用于呈现时间戳更新效果
 	useEffect(() => {
@@ -764,10 +892,10 @@ const LyricSyncWordView: FC<{
 		const animation = startTimeRef.current?.animate(
 			[
 				{
-					backgroundColor: "var(--green-a8)",
+					backgroundColor: "var(--ruby-a8)",
 				},
 				{
-					backgroundColor: "var(--green-a4)",
+					backgroundColor: "var(--ruby-a4)",
 				},
 			],
 			{
@@ -802,10 +930,7 @@ const LyricSyncWordView: FC<{
 		};
 	}, [endTime, visualizeTimestampUpdate]);
 
-	const hasError = useMemo(
-		() => startTime > endTime,
-		[startTime, endTime],
-	);
+	const hasError = useMemo(() => startTime > endTime, [startTime, endTime]);
 
 	const className = useMemo(
 		() =>
@@ -821,6 +946,7 @@ const LyricSyncWordView: FC<{
 							showTimestamps &&
 							highlightErrors)) &&
 					styles.error,
+				hasGrammarWarning && highlightGrammarWarnings && styles.grammarWarning,
 			),
 		[
 			isWordBlank,
@@ -831,15 +957,20 @@ const LyricSyncWordView: FC<{
 			highlightActiveWord,
 			showTimestamps,
 			highlightErrors,
+			highlightGrammarWarnings,
+			hasGrammarWarning,
 		],
 	);
 
 	return (
 		<div
 			className={className}
+			style={{ position: "relative", zIndex: 1 }}
 			onClick={(evt) => {
-				evt.stopPropagation();
-				evt.preventDefault();
+				const now = Date.now();
+				const clickInterval = now - lastClickTimeRef.current;
+				lastClickTimeRef.current = now;
+
 				setSelectedLines((state) => {
 					state.clear();
 					state.add(line.id);
@@ -848,8 +979,76 @@ const LyricSyncWordView: FC<{
 					state.clear();
 					state.add(syncId);
 				});
+
+				// Only trigger grammar actions if two clicks happen within 300ms (standard double click)
+				if (clickInterval > 300) return;
+
+				evt.stopPropagation();
+				evt.preventDefault();
+
+				const wordText = line.words[wordIndex]?.word || "";
+				const firstAlphaIndex = wordText.search(/[a-zA-Z]/);
+				const isFirstWordLowercase =
+					wordIndex === 0 &&
+					firstAlphaIndex !== -1 &&
+					wordText[firstAlphaIndex] ===
+						wordText[firstAlphaIndex].toLowerCase();
+
+				const suggestions = getGrammarSuggestions(
+					line,
+					wordIndex,
+					allWordsInLyrics,
+				);
+
+				const hasMisspellWarning =
+					suggestions.length > 0 &&
+					suggestions[0] !==
+						wordText.slice(0, firstAlphaIndex) +
+							wordText[firstAlphaIndex]?.toUpperCase() +
+							wordText.slice(firstAlphaIndex + 1);
+
+				if (isFirstWordLowercase && !hasMisspellWarning) {
+					const capitalized =
+						wordText.slice(0, firstAlphaIndex) +
+						wordText[firstAlphaIndex].toUpperCase() +
+						wordText.slice(firstAlphaIndex + 1);
+					handleWordUpdate(wordIndex, capitalized);
+					return;
+				}
+
+				// Auto-remove trailing punctuation if it's the last word of the line
+				if (wordIndex === line.words.length - 1) {
+					const rawWord = wordText.trim();
+					if (rawWord.endsWith(".") || rawWord.endsWith(",")) {
+						handleWordUpdate(wordIndex, rawWord.slice(0, -1).trim());
+						return;
+					}
+				}
+
+				if (hasGrammarWarning) {
+					setCorrectionDialog({
+						open: true,
+						wordIndex,
+						currentWord: wordText,
+						suggestions,
+					});
+				}
 			}}
 		>
+			<div
+				ref={ambientHighlightRef}
+				style={{
+					position: "absolute",
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+					opacity: 0,
+					zIndex: -1,
+					pointerEvents: "none",
+					borderRadius: "inherit",
+				}}
+			/>
 			{showTimestamps && (
 				<div className={classNames(styles.startTime)} ref={startTimeRef}>
 					{msToTimestamp(startTime)}
@@ -872,7 +1071,22 @@ const LyricWorldViewSync: FC<{
 	wordIndex: number;
 	line: LyricLine;
 	lineIndex: number;
-}> = ({ wordAtom, line }) => {
+	setCorrectionDialog: (dialog: {
+		open: boolean;
+		wordIndex: number;
+		currentWord: string;
+		suggestions: string[];
+	} | null) => void;
+	handleWordUpdate: (wordIndex: number, newWord: string) => void;
+	allWordsInLyrics: Set<string>;
+}> = ({
+	wordAtom,
+	line,
+	wordIndex,
+	setCorrectionDialog,
+	handleWordUpdate,
+	allWordsInLyrics,
+}) => {
 	const { t } = useTranslation();
 	const word = useAtomValue(wordAtom);
 	const displayRomanizationInSync = useAtomValue(displayRomanizationInSyncAtom);
@@ -884,13 +1098,7 @@ const LyricWorldViewSync: FC<{
 			romanWord?: string,
 			showRomanization?: boolean,
 		) =>
-			getDisplayWordText(
-				t,
-				displayText,
-				isBlank,
-				romanWord,
-				showRomanization,
-			),
+			getDisplayWordText(t, displayText, isBlank, romanWord, showRomanization),
 		[t],
 	);
 
@@ -900,8 +1108,7 @@ const LyricWorldViewSync: FC<{
 				{word.ruby.map((rubyWord, rubyIndex) => {
 					const isRubyBlank =
 						rubyWord.word.length === 0 ||
-						(rubyWord.word.length > 0 &&
-							rubyWord.word.trim().length === 0);
+						(rubyWord.word.length > 0 && rubyWord.word.trim().length === 0);
 					return (
 						<LyricSyncWordView
 							key={`${word.id}-ruby-${rubyIndex}`}
@@ -911,6 +1118,10 @@ const LyricWorldViewSync: FC<{
 							endTime={rubyWord.endTime}
 							displayWord={getDisplayWord(rubyWord.word, isRubyBlank)}
 							isWordBlank={isRubyBlank}
+							wordIndex={wordIndex}
+							setCorrectionDialog={setCorrectionDialog}
+							handleWordUpdate={handleWordUpdate}
+							allWordsInLyrics={allWordsInLyrics}
 						/>
 					);
 				})}
@@ -931,6 +1142,10 @@ const LyricWorldViewSync: FC<{
 				displayRomanizationInSync,
 			)}
 			isWordBlank={isWordBlank}
+			wordIndex={wordIndex}
+			setCorrectionDialog={setCorrectionDialog}
+			handleWordUpdate={handleWordUpdate}
+			allWordsInLyrics={allWordsInLyrics}
 		/>
 	);
 };
@@ -941,12 +1156,68 @@ export const LyricWordView: FC<{
 	line: LyricLine;
 	lineIndex: number;
 }> = memo(({ wordAtom, wordIndex, line, lineIndex }) => {
+	const { t } = useTranslation();
 	const word = useAtomValue(wordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
 	const layoutMode = useAtomValue(layoutModeAtom);
+	const ignoredGrammarWords = useAtomValue(ignoredGrammarWordsAtom);
 
 	const isWordBlank = useWordBlank(word.word);
 	const hasRuby = word.ruby && word.ruby.length > 0;
+	const lineIsEnglish = useMemo(() => isEnglishLine(line), [line]);
+	const ignoredWordsSet = useMemo(
+		() => new Set(ignoredGrammarWords),
+		[ignoredGrammarWords],
+	);
+	const allWordsInLyrics = useAtomValue(allLyricsWordsAtom);
+	const grammarWarningSet = useMemo(
+		() =>
+			lineIsEnglish && toolMode === ToolMode.Sync
+				? collectWarningsWithSuggestions(
+						line,
+						ignoredWordsSet,
+						allWordsInLyrics,
+					)
+				: new Set<string>(),
+		[line, lineIsEnglish, ignoredWordsSet, toolMode, allWordsInLyrics],
+	);
+	const hasGrammarWarning = grammarWarningSet.has(word.id);
+	const [correctionDialog, setCorrectionDialog] = useState<{
+		open: boolean;
+		wordIndex: number;
+		currentWord: string;
+		suggestions: string[];
+	} | null>(null);
+	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
+
+	const handleDialogClose = () => setCorrectionDialog(null);
+
+	const handleWordUpdate = (targetWordIndex: number, newWord: string) => {
+		editLyricLines((state) => {
+			const targetLine = state.lyricLines[lineIndex];
+			if (targetLine) {
+				targetLine.words[targetWordIndex].word = newWord;
+			}
+		});
+		setCorrectionDialog(null);
+	};
+
+	// Sub-component for suggestion buttons
+	const SuggestionButton = ({
+		suggestion,
+		onApply,
+	}: { suggestion: string; onApply: (s: string) => void }) => {
+		return (
+			<Button
+				variant="soft"
+				onClick={() => onApply(suggestion)}
+			>
+				{suggestion === "__REMOVE_REPEATED_WORD__"
+					? t("lyricWordView.removeWord", "删除重复单词")
+					: suggestion}
+			</Button>
+		);
+	};
 
 	return (
 		<div>
@@ -956,6 +1227,7 @@ export const LyricWordView: FC<{
 					line={line}
 					lineIndex={lineIndex}
 					wordIndex={wordIndex}
+					grammarWarning={hasGrammarWarning}
 				/>
 			)}
 			{toolMode === ToolMode.Edit && layoutMode === LayoutMode.Advance && (
@@ -964,6 +1236,7 @@ export const LyricWordView: FC<{
 					line={line}
 					lineIndex={lineIndex}
 					wordIndex={wordIndex}
+					grammarWarning={hasGrammarWarning}
 				/>
 			)}
 			{toolMode === ToolMode.Sync && (hasRuby || !isWordBlank) && (
@@ -972,8 +1245,80 @@ export const LyricWordView: FC<{
 					line={line}
 					lineIndex={lineIndex}
 					wordIndex={wordIndex}
+					setCorrectionDialog={setCorrectionDialog}
+					handleWordUpdate={handleWordUpdate}
+					allWordsInLyrics={allWordsInLyrics}
 				/>
 			)}
+			<Dialog.Root
+				open={correctionDialog?.open || false}
+				onOpenChange={handleDialogClose}
+			>
+				<Dialog.Content>
+					<Dialog.Title>Correct Grammar</Dialog.Title>
+					<Dialog.Description>
+						Edit the word or select a suggestion to fix the grammar issue.
+					</Dialog.Description>
+					<Flex direction="column" gap="3">
+						<Text size="1" color="gray" mb="-2">
+							Input:
+						</Text>
+						<TextField.Root
+							value={correctionDialog?.currentWord || ""}
+							onChange={(e) => {
+								if (correctionDialog) {
+									setCorrectionDialog({
+										...correctionDialog,
+										currentWord: e.target.value,
+									});
+								}
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && correctionDialog) {
+									handleWordUpdate(
+										correctionDialog.wordIndex,
+										correctionDialog.currentWord,
+									);
+								}
+							}}
+							placeholder="Type the corrected word"
+						/>
+						<Flex direction="column" gap="2">
+							<Text size="2" weight="bold">
+								Suggestions:
+							</Text>
+							{correctionDialog?.suggestions &&
+							correctionDialog.suggestions.length > 0 ? (
+								<Grid columns="2" gap="2">
+									{correctionDialog.suggestions.map((suggestion) => (
+										<SuggestionButton
+											key={suggestion}
+											suggestion={suggestion}
+											onApply={(s) =>
+												handleWordUpdate(
+													correctionDialog.wordIndex,
+													s === "__REMOVE_REPEATED_WORD__" ? "" : s,
+												)
+											}
+										/>
+									))}
+								</Grid>
+							) : (
+								<Text size="1" color="gray" align="center">
+									{t("lyricWordView.noSuggestions", "暂无建议")}
+								</Text>
+							)}
+						</Flex>
+					</Flex>
+					<Flex gap="3" mt="4" justify="end">
+						<Dialog.Close>
+							<Button variant="soft" color="gray">
+								Cancel
+							</Button>
+						</Dialog.Close>
+					</Flex>
+				</Dialog.Content>
+			</Dialog.Root>
 		</div>
 	);
 });

@@ -33,8 +33,8 @@ import {
 	toolModeAtom,
 } from "$/states/main.ts";
 import type { LyricLine } from "$/types/ttml.ts";
-import { LyricLineView } from "./lyric-line-view";
 import styles from "./index.module.css";
+import { LyricLineView } from "./lyric-line-view";
 
 const lyricLinesOnlyAtom = splitAtom(
 	focusAtom(lyricLinesAtom, (o) => o.prop("lyricLines")),

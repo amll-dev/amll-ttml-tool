@@ -362,8 +362,7 @@ export const ImportFromText = () => {
 								value={importMode}
 								onValueChange={(v) => setImportMode(v as ImportMode)}
 							>
-								<Select.Trigger />
-								<Select.Content>
+								<Select.Trigger /><Select.Content>
 									<Select.Item value={ImportMode.Lyric}>
 										{t("textImportDialog.contentMode.lyric", "仅歌词")}
 									</Select.Item>
@@ -401,8 +400,7 @@ export const ImportFromText = () => {
 									setLineSeparatorMode(v as LineSeparatorMode)
 								}
 							>
-								<Select.Trigger />
-								<Select.Content>
+								<Select.Trigger /><Select.Content>
 									<Select.Item value={LineSeparatorMode.Interleaved}>
 										{t(
 											"textImportDialog.separationMode.multipleLine",

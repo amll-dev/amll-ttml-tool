@@ -1,6 +1,6 @@
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import type { CSSProperties } from "react";
 import { Toolbar } from "radix-ui";
+import type { CSSProperties } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useTopMenuActions } from "../useTopMenuActions";
 
@@ -41,7 +41,10 @@ const ToolMenuItems = () => {
 				</DropdownMenu.SubTrigger>
 				<DropdownMenu.SubContent>
 					<DropdownMenu.Item onSelect={menu.onOpenDistributeRomanization}>
-						{t("topBar.menu.perWordRomanization.distribute", "自动分配罗马音...")}
+						{t(
+							"topBar.menu.perWordRomanization.distribute",
+							"自动分配罗马音...",
+						)}
 					</DropdownMenu.Item>
 					<DropdownMenu.Item onSelect={menu.onCheckRomanizationWarnings}>
 						{t("topBar.menu.perWordRomanization.check", "检查")}
@@ -74,13 +77,11 @@ export const ToolMenu = (props: ToolMenuProps) => {
 
 	return (
 		<DropdownMenu.Root>
-			<Toolbar.Button asChild>
-				<DropdownMenu.Trigger style={props.triggerStyle}>
-					<Button variant="soft" style={props.buttonStyle}>
+			<Toolbar.Button asChild
+			><DropdownMenu.Trigger style={props.triggerStyle}
+				><Button variant="soft" style={props.buttonStyle}>
 						<Trans i18nKey="topBar.menu.tool">工具</Trans>
-					</Button>
-				</DropdownMenu.Trigger>
-			</Toolbar.Button>
+					</Button></DropdownMenu.Trigger></Toolbar.Button>
 			<DropdownMenu.Content>
 				<ToolMenuItems />
 			</DropdownMenu.Content>

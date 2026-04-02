@@ -501,14 +501,12 @@ export const AudioSpectrogram: FC = () => {
 					<Tooltip
 						content={t("spectrogram.showUnselectedLines", "显示未选中行")}
 						side="left"
-					>
-						<IconButton
+					><IconButton
 							variant={showUnselectedLines ? "solid" : "outline"}
 							onClick={() => setShowUnselectedLines((prev) => !prev)}
 						>
 							{showUnselectedLines ? <EyeFilled /> : <EyeOffFilled />}
-						</IconButton>
-					</Tooltip>
+						</IconButton></Tooltip>
 				</div>
 			</div>
 		</div>
