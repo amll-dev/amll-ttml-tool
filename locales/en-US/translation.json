@@ -39,6 +39,10 @@
 		"useMetadataName": {
 			"title": "Use metadata name?",
 			"description": "Use \"{name}\" as the file name?"
+		},
+		"noSongwriter": {
+			"title": "Confirm Export",
+			"description": "The song has no songwriters. Do you want to continue saving?"
 		}
 	},
 	"ribbonBar": {

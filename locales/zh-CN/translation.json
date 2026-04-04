@@ -39,6 +39,10 @@
 		"importFile": {
 			"title": "确认导入歌词",
 			"description": "当前文件有未保存的更改。如果继续，这些更改将会丢失。确定要导入歌词吗？"
+		},
+		"noSongwriter": {
+			"title": "确认导出",
+			"description": "该歌曲没有记录词曲作者（songwriter），确定要保存吗？"
 		}
 	},
 	"ribbonBar": {

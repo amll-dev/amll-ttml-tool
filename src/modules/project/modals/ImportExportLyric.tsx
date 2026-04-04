@@ -47,7 +47,21 @@ export const ImportExportLyric = () => {
 	const onExportLyric =
 		(stringifier: (lines: LyricLine[]) => string, extension: string) =>
 		async () => {
-			const lyric = store.get(lyricLinesAtom).lyricLines;
+			const lyricState = store.get(lyricLinesAtom);
+			const lyric = lyricState.lyricLines;
+			const metadata = lyricState.metadata;
+
+			const songwriter = metadata.find((m) => m.key === "songwriter");
+			if (!songwriter || songwriter.value.every((v) => !v.trim())) {
+				const confirm = window.confirm(
+					t(
+						"confirmDialog.noSongwriter.description",
+						"The song has no songwriters. Do you want to continue saving?",
+					),
+				);
+				if (!confirm) return;
+			}
+
 			const lyricForExport = lyric.map((line) => ({
 				...line,
 				startTime: Math.round(line.startTime),
