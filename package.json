@@ -13,9 +13,9 @@
 		"locale:gen": "i18next 'src/**/*.{ts,tsx}'"
 	},
 	"dependencies": {
-		"@applemusic-like-lyrics/core": "0.2.0",
-		"@applemusic-like-lyrics/lyric": "0.3.0",
-		"@applemusic-like-lyrics/react": "0.2.0",
+		"@applemusic-like-lyrics/core": "0.3.1",
+		"@applemusic-like-lyrics/lyric": "0.4.1",
+		"@applemusic-like-lyrics/react": "0.3.1",
 		"@radix-ui/themes": "^3.2.1",
 		"@sentry/react": "^10.32.1",
 		"@tauri-apps/api": "^2.9.1",
