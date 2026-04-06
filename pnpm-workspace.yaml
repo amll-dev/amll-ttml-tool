@@ -1,5 +1,0 @@
-ignoredBuiltDependencies:
-  - '@applemusic-like-lyrics/core'
-  - '@applemusic-like-lyrics/lyric'
-  - '@applemusic-like-lyrics/react'
-  - esbuild
