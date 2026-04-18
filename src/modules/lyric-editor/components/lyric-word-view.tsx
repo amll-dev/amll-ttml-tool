@@ -55,18 +55,15 @@ import {
 	ToolMode,
 	toolModeAtom,
 } from "$/states/main.ts";
-import {
-	type LyricLine,
-	type LyricWord,
-	newLyricWord,
-} from "$/types/ttml.ts";
+import { type LyricLine, type LyricWord, newLyricWord } from "$/types/ttml.ts";
+import { containsRadicalChar } from "$/utils/detect-radical.ts";
 import { msToTimestamp, parseTimespan } from "$/utils/timestamp.ts";
-import { normalizeLineTime } from "../utils/normalize-line-time.ts";
+import { RubyEditor } from "../tools/RubyEditor.tsx";
 import { buildRubySelectionId } from "../utils/lyric-states.ts";
+import { normalizeLineTime } from "../utils/normalize-line-time.ts";
 import styles from "./index.module.css";
 import { LyricLineMenu } from "./lyric-line-menu.tsx";
 import { LyricWordMenu } from "./lyric-word-menu";
-import { RubyEditor } from "../tools/RubyEditor.tsx";
 
 const isDraggingAtom = atom(false);
 
@@ -90,7 +87,11 @@ const parseRubyShortcut = (value: string) => {
 };
 
 const getDisplayWordText = (
-	t: (key: string, defaultValue: string, options?: { count?: number }) => string,
+	t: (
+		key: string,
+		defaultValue: string,
+		options?: { count?: number },
+	) => string,
 	word: string,
 	isWordBlank: boolean,
 	romanWord?: string,
@@ -456,6 +457,11 @@ const LyricWordViewEditAdvance = ({
 		[currentWord.startTime, currentWord.endTime],
 	);
 
+	const hasRadical = useMemo(
+		() => containsRadicalChar(currentWord.word),
+		[currentWord.word],
+	);
+
 	const className = useMemo(
 		() =>
 			classNames(
@@ -466,8 +472,16 @@ const LyricWordViewEditAdvance = ({
 				isWordBlank && styles.blank,
 				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
+				hasRadical && styles.radical,
 			),
-		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
+		[
+			isWordBlank,
+			isWordSelected,
+			showRubyEditor,
+			hasError,
+			toolMode,
+			hasRadical,
+		],
 	);
 
 	return (
@@ -510,7 +524,7 @@ const LyricWordViewEditAdvance = ({
 						>
 							<CutRegular />
 						</IconButton>
-					<WordEditField
+						<WordEditField
 							size="1"
 							wordAtom={wordAtom}
 							fieldName="word"
@@ -633,6 +647,8 @@ const LyricWorldViewEdit = ({
 		[word.startTime, word.endTime],
 	);
 
+	const hasRadical = useMemo(() => containsRadicalChar(word.word), [word.word]);
+
 	const className = useMemo(
 		() =>
 			classNames(
@@ -642,8 +658,16 @@ const LyricWorldViewEdit = ({
 				isWordBlank && styles.blank,
 				showRubyEditor && styles.rubyEnabled,
 				hasError && toolMode === ToolMode.Edit && styles.error,
+				hasRadical && styles.radical,
 			),
-		[isWordBlank, isWordSelected, showRubyEditor, hasError, toolMode],
+		[
+			isWordBlank,
+			isWordSelected,
+			showRubyEditor,
+			hasError,
+			toolMode,
+			hasRadical,
+		],
 	);
 
 	const onEnter = useCallback(
@@ -731,7 +755,8 @@ const LyricSyncWordView: FC<{
 	endTime: number;
 	displayWord: string;
 	isWordBlank: boolean;
-}> = ({ syncId, line, startTime, endTime, displayWord, isWordBlank }) => {
+	word?: string;
+}> = ({ syncId, line, startTime, endTime, displayWord, isWordBlank, word }) => {
 	const isWordSelectedAtom = useMemo(
 		() => atom((get) => get(selectedWordsAtom).has(syncId)),
 		[syncId],
@@ -802,9 +827,11 @@ const LyricSyncWordView: FC<{
 		};
 	}, [endTime, visualizeTimestampUpdate]);
 
-	const hasError = useMemo(
-		() => startTime > endTime,
-		[startTime, endTime],
+	const hasError = useMemo(() => startTime > endTime, [startTime, endTime]);
+
+	const hasRadical = useMemo(
+		() => (word ? containsRadicalChar(word) : false),
+		[word],
 	);
 
 	const className = useMemo(
@@ -821,6 +848,7 @@ const LyricSyncWordView: FC<{
 							showTimestamps &&
 							highlightErrors)) &&
 					styles.error,
+				hasRadical && styles.radical,
 			),
 		[
 			isWordBlank,
@@ -831,6 +859,7 @@ const LyricSyncWordView: FC<{
 			highlightActiveWord,
 			showTimestamps,
 			highlightErrors,
+			hasRadical,
 		],
 	);
 
@@ -884,13 +913,7 @@ const LyricWorldViewSync: FC<{
 			romanWord?: string,
 			showRomanization?: boolean,
 		) =>
-			getDisplayWordText(
-				t,
-				displayText,
-				isBlank,
-				romanWord,
-				showRomanization,
-			),
+			getDisplayWordText(t, displayText, isBlank, romanWord, showRomanization),
 		[t],
 	);
 
@@ -900,8 +923,7 @@ const LyricWorldViewSync: FC<{
 				{word.ruby.map((rubyWord, rubyIndex) => {
 					const isRubyBlank =
 						rubyWord.word.length === 0 ||
-						(rubyWord.word.length > 0 &&
-							rubyWord.word.trim().length === 0);
+						(rubyWord.word.length > 0 && rubyWord.word.trim().length === 0);
 					return (
 						<LyricSyncWordView
 							key={`${word.id}-ruby-${rubyIndex}`}
@@ -911,6 +933,7 @@ const LyricWorldViewSync: FC<{
 							endTime={rubyWord.endTime}
 							displayWord={getDisplayWord(rubyWord.word, isRubyBlank)}
 							isWordBlank={isRubyBlank}
+							word={rubyWord.word}
 						/>
 					);
 				})}
@@ -931,6 +954,7 @@ const LyricWorldViewSync: FC<{
 				displayRomanizationInSync,
 			)}
 			isWordBlank={isWordBlank}
+			word={word.word}
 		/>
 	);
 };
