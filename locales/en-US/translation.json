@@ -496,7 +496,15 @@
 		"openLink": "Open link",
 		"duplicateMsg": "Found duplicate metadata values",
 		"addValue": "Add",
+		"batchEdit": "Batch fill",
+		"batchEditTitle": "Batch fill preset",
+		"batchHint": "Enter one new value per line. Existing values will be kept and deduplicated with the new input when applied.",
+		"batchExistingValues": "Existing values",
+		"batchPlaceholder": "Enter one new value per line",
+		"batchDetected": "Items to merge",
+		"batchApply": "Merge and fill",
 		"builtinOptions": {
+
 			"musicName": "Track Name",
 			"artists": "Track Artists",
 			"artistsInvalidMsg": "If there are multiple artists, please add this key multiple times instead of using delimiters; if an artist name contains delimiters, please ignore this message",

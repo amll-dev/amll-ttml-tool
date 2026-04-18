@@ -9,6 +9,20 @@
 	flex-grow: 1;
 }
 
+.metadataKeyHeader {
+	width: 100%;
+	justify-content: space-between;
+}
+
+.metadataKeyLabel {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.entryEditButton {
+	flex-shrink: 0;
+}
+
 .dragOverInput {
 	box-shadow: 0 0 0 2px var(--accent-9);
 	background-color: var(--accent-3);
@@ -64,3 +78,52 @@
 	flex-shrink: 0;
 	background: var(--color-bg-1);
 }
+
+.presetMenuRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.presetMenuItem {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.presetEditButton {
+	flex-shrink: 0;
+}
+
+.batchDialogContent {
+	max-width: 560px;
+}
+
+.batchTextArea {
+	min-height: 240px;
+	font-family: var(--code-font-family);
+}
+
+.batchExistingBlock {
+	padding: var(--space-2);
+	border: 1px solid var(--gray-6);
+	border-radius: var(--radius-3);
+	background: var(--gray-2);
+}
+
+.batchExistingList {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	max-height: 140px;
+	overflow-y: auto;
+}
+
+.batchExistingItem {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: var(--gray-3);
+	font-family: var(--code-font-family);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+

@@ -33,8 +33,12 @@
 			"description": "Máte neuložené zmeny. Ak budete pokračovať, tieto zmeny budú stratené. Naozaj chcete otvoriť nový súbor?"
 		},
 		"importFile": {
-			"title": "Potvrdiť import textov",
-			"description": "Máte neuložené zmeny. Ak budete pokračovať, tieto zmeny budú stratené. Naozaj chcete importovať nové texty?"
+			"title": "Potvrdiť import textu piesne",
+			"description": "Máte neuložené zmeny. Ak budete pokračovať, tieto zmeny budú stratené. Naozaj chcete importovať nový text piesne?"
+		},
+		"useMetadataName": {
+			"title": "Použiť názov metadát?",
+			"description": "Použiť „{name}“ ako názov súboru?"
 		}
 	},
 	"ribbonBar": {
@@ -453,6 +457,13 @@
 		"openLink": "Otvoriť odkaz",
 		"duplicateMsg": "Nájdené duplicitné hodnoty metadát",
 		"addValue": "Pridať",
+		"batchEdit": "Dávkové vyplnenie",
+		"batchEditTitle": "Dávkové vyplnenie predvoľby",
+		"batchHint": "Zadajte jednu novú hodnotu na riadok. Existujúce hodnoty sa zachovajú a pri použití sa automaticky zlúčia bez duplicít.",
+		"batchExistingValues": "Existujúce hodnoty",
+		"batchPlaceholder": "Zadajte jednu novú hodnotu na riadok",
+		"batchDetected": "Položky na zlúčenie",
+		"batchApply": "Zlúčiť a vyplniť",
 		"builtinOptions": {
 			"musicName": "Názov skladby",
 			"artists": "Umelci skladby",

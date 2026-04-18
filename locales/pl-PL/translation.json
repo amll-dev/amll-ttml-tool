@@ -35,6 +35,10 @@
 		"importFile": {
 			"title": "Potwierdź import tekstu",
 			"description": "Masz niezapisane zmiany. Jeśli kontynuujesz, te zmiany zostaną utracone. Czy na pewno chcesz zaimportować nowy tekst?"
+		},
+		"useMetadataName": {
+			"title": "Użyć nazwy metadanych?",
+			"description": "Użyć „{name}” jako nazwy pliku?"
 		}
 	},
 	"ribbonBar": {
@@ -453,6 +457,13 @@
 		"openLink": "Otwórz link",
 		"duplicateMsg": "Znaleziono zduplikowane wartości metadanych",
 		"addValue": "Dodaj",
+		"batchEdit": "Wypełnianie zbiorcze",
+		"batchEditTitle": "Zbiorcze wypełnianie presetu",
+		"batchHint": "Wpisz jedną nową wartość w każdym wierszu. Istniejące wartości zostaną zachowane i automatycznie połączone bez duplikatów po zastosowaniu.",
+		"batchExistingValues": "Istniejące wartości",
+		"batchPlaceholder": "Wpisz jedną nową wartość w każdym wierszu",
+		"batchDetected": "Elementy do scalenia",
+		"batchApply": "Scal i wypełnij",
 		"builtinOptions": {
 			"musicName": "Nazwa utworu",
 			"artists": "Artyści",

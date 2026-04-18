@@ -453,6 +453,13 @@
 		"openLink": "Otevřít odkaz",
 		"duplicateMsg": "Nalezeny duplicitní hodnoty metadat",
 		"addValue": "Přidat",
+		"batchEdit": "Dávkové vyplnění",
+		"batchEditTitle": "Dávkové vyplnění předvolby",
+		"batchHint": "Zadejte jeden nový údaj na řádek. Stávající hodnoty zůstanou zachovány a při použití se automaticky sloučí bez duplicit.",
+		"batchExistingValues": "Aktuální hodnoty",
+		"batchPlaceholder": "Zadejte jeden nový údaj na řádek",
+		"batchDetected": "Položky ke sloučení",
+		"batchApply": "Sloučit a vyplnit",
 		"builtinOptions": {
 			"musicName": "Název skladby",
 			"artists": "Umělci skladby",

@@ -453,6 +453,13 @@
 		"openLink": "Åbn link",
 		"duplicateMsg": "Fandt duplikerede metadataværdier",
 		"addValue": "Tilføj",
+		"batchEdit": "Batch-udfyldning",
+		"batchEditTitle": "Batch-udfyldning af forudindstilling",
+		"batchHint": "Indtast én ny værdi pr. linje. Eksisterende værdier bevares og flettes automatisk sammen uden dubletter, når du anvender ændringen.",
+		"batchExistingValues": "Eksisterende værdier",
+		"batchPlaceholder": "Indtast én ny værdi pr. linje",
+		"batchDetected": "Elementer til fletning",
+		"batchApply": "Flet og udfyld",
 		"builtinOptions": {
 			"musicName": "Sangnavn",
 			"artists": "Sangkunstnere",

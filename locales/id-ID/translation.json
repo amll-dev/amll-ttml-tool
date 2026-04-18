@@ -476,6 +476,13 @@
 		"openLink": "Buka Tautan",
 		"duplicateMsg": "Ada nilai metadata yang duplikat",
 		"addValue": "Tambah",
+		"batchEdit": "Isi batch",
+		"batchEditTitle": "Isi preset secara batch",
+		"batchHint": "Masukkan satu nilai baru per baris. Nilai yang sudah ada akan tetap dipertahankan dan digabungkan otomatis tanpa duplikasi saat diterapkan.",
+		"batchExistingValues": "Nilai yang sudah ada",
+		"batchPlaceholder": "Masukkan satu nilai baru per baris",
+		"batchDetected": "Item untuk digabungkan",
+		"batchApply": "Gabung dan isi",
 		"builtinOptions": {
 			"musicName": "Judul Lagu",
 			"artists": "Artis Lagu",

@@ -35,6 +35,10 @@
 		"importFile": {
 			"title": "Confirmar importação de letras",
 			"description": "Você tem alterações não salvas. Se continuar, essas alterações serão perdidas. Tem certeza de que deseja importar novas letras?"
+		},
+		"useMetadataName": {
+			"title": "Usar nome dos metadados?",
+			"description": "Usar \"{name}\" como nome do arquivo?"
 		}
 	},
 	"ribbonBar": {
@@ -453,6 +457,13 @@
 		"openLink": "Abrir link",
 		"duplicateMsg": "Encontrados valores de metadados duplicados",
 		"addValue": "Adicionar",
+		"batchEdit": "Preenchimento em lote",
+		"batchEditTitle": "Preenchimento em lote do preset",
+		"batchHint": "Digite um novo valor por linha. Os valores existentes serão mantidos e mesclados automaticamente sem duplicatas ao aplicar.",
+		"batchExistingValues": "Valores existentes",
+		"batchPlaceholder": "Digite um novo valor por linha",
+		"batchDetected": "Itens para mesclar",
+		"batchApply": "Mesclar e preencher",
 		"builtinOptions": {
 			"musicName": "Nome da faixa",
 			"artists": "Artistas da faixa",

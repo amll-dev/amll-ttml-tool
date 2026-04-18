@@ -35,6 +35,10 @@
 		"importFile": {
 			"title": "Confirmer l'importation des paroles",
 			"description": "Vous avez des modifications non enregistrées. Si vous continuez, ces modifications seront perdues. Êtes-vous sûr de vouloir importer de nouvelles paroles ?"
+		},
+		"useMetadataName": {
+			"title": "Utiliser le nom des métadonnées ?",
+			"description": "Utiliser « {name} » comme nom de fichier ?"
 		}
 	},
 	"ribbonBar": {
@@ -453,6 +457,13 @@
 		"openLink": "Ouvrir le lien",
 		"duplicateMsg": "Valeurs de métadonnées en double trouvées",
 		"addValue": "Ajouter",
+		"batchEdit": "Remplissage groupé",
+		"batchEditTitle": "Remplissage groupé du préréglage",
+		"batchHint": "Saisissez une nouvelle valeur par ligne. Les valeurs existantes seront conservées et fusionnées automatiquement sans doublons lors de l'application.",
+		"batchExistingValues": "Valeurs existantes",
+		"batchPlaceholder": "Saisissez une nouvelle valeur par ligne",
+		"batchDetected": "Éléments à fusionner",
+		"batchApply": "Fusionner et remplir",
 		"builtinOptions": {
 			"musicName": "Nom de la piste",
 			"artists": "Artistes de la piste",

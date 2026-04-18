@@ -2,6 +2,7 @@ import {
 	Add16Regular,
 	AlbumRegular,
 	Delete16Regular,
+	Edit16Regular,
 	Info16Regular,
 	MusicNote1Regular,
 	NumberSymbol16Regular,
@@ -15,6 +16,7 @@ import {
 	Flex,
 	IconButton,
 	Text,
+	TextArea,
 	TextField,
 } from "@radix-ui/themes";
 import { useAtom } from "jotai";
@@ -41,16 +43,62 @@ import {
 	SpotifyIcon,
 } from "./PlatformIcons";
 
+const parseMetadataLines = (text: string) =>
+	text
+		.split(/\r?\n/u)
+		.map((line) => line.trim())
+		.filter((line) => line !== "");
+
+const mergeMetadataValues = (
+	currentList: string[],
+	incomingValues: string[],
+): string[] => {
+	const result = [...currentList];
+	const existingSet = new Set<string>();
+	const emptyIndices: number[] = [];
+
+	result.forEach((val, index) => {
+		if (val.trim() === "") {
+			emptyIndices.push(index);
+		} else {
+			existingSet.add(val);
+		}
+	});
+
+	for (const value of incomingValues) {
+		if (existingSet.has(value)) continue;
+
+		if (emptyIndices.length > 0) {
+			// biome-ignore lint/style/noNonNullAssertion: 肯定有
+			const slotIndex = emptyIndices.shift()!;
+			result[slotIndex] = value;
+		} else {
+			result.push(value);
+		}
+		existingSet.add(value);
+	}
+
+	return result;
+};
+
 interface MetadataEntryProps {
 	entry: { key: string; value: string[] };
 	index: number;
 	setLyricLines: (args: (prev: TTMLLyric) => void) => void;
 	option: SelectOption | null;
 	focusAddKeyButton: () => void;
+	onOpenBatchEdit: (key: string, label: string) => void;
 }
 
 const MetadataEntry = memo(
-	({ entry, index, setLyricLines, option, focusAddKeyButton }: MetadataEntryProps) => {
+	({
+		entry,
+		index,
+		setLyricLines,
+		option,
+		focusAddKeyButton,
+		onOpenBatchEdit,
+	}: MetadataEntryProps) => {
 		const validation = option?.validation;
 		const rowHasError = validation
 			? entry.value.some(
@@ -99,30 +147,10 @@ const MetadataEntry = memo(
 				if (parts.length === 0) return;
 
 				setLyricLines((prev) => {
-					const currentList = prev.metadata[index].value;
-					const existingSet = new Set<string>();
-					const emptyIndices: number[] = [];
-
-					currentList.forEach((val, i) => {
-						if (val.trim() === "") {
-							emptyIndices.push(i);
-						} else {
-							existingSet.add(val);
-						}
-					});
-
-					for (const part of parts) {
-						if (existingSet.has(part)) continue;
-
-						if (emptyIndices.length > 0) {
-							// biome-ignore lint/style/noNonNullAssertion: 肯定有
-							const slotIndex = emptyIndices.shift()!;
-							currentList[slotIndex] = part;
-						} else {
-							currentList.push(part);
-						}
-						existingSet.add(part);
-					}
+					prev.metadata[index].value = mergeMetadataValues(
+						prev.metadata[index].value,
+						parts,
+					);
 				});
 			},
 			[index, setLyricLines],
@@ -162,27 +190,38 @@ const MetadataEntry = memo(
 									<Flex
 										align="center"
 										gap="2"
-										style={{
-											width: "100%",
-										}}
+										className={styles.metadataKeyHeader}
 									>
-										<span
-											style={{
-												display: "flex",
-												color: "var(--gray-12)",
-											}}
-										>
-											{option?.icon || <Info16Regular />}
-										</span>
+										<Flex align="center" gap="2" className={styles.metadataKeyLabel}>
+											<span
+												style={{
+													display: "flex",
+													color: "var(--gray-12)",
+												}}
+											>
+												{option?.icon || <Info16Regular />}
+											</span>
 
-										<Text
-											style={{
-												whiteSpace: "normal",
-												wordBreak: "break-word",
-											}}
+											<Text
+												style={{
+													whiteSpace: "normal",
+													wordBreak: "break-word",
+												}}
+											>
+												{option?.label || entry.key}
+											</Text>
+										</Flex>
+										<IconButton
+											size="1"
+											variant="ghost"
+											className={styles.entryEditButton}
+											title={t("metadataDialog.batchEdit", "批量填写")}
+											onClick={() =>
+												onOpenBatchEdit(entry.key, option?.label || entry.key)
+											}
 										>
-											{option?.label || entry.key}
-										</Text>
+											<Edit16Regular />
+										</IconButton>
 									</Flex>
 								)}
 							</td>
@@ -373,6 +412,11 @@ interface SelectOption {
 	};
 }
 
+interface BatchEditTarget {
+	key: string;
+	label: string;
+}
+
 export const MetadataEditor = () => {
 	const [metadataEditorDialog, setMetadataEditorDialog] = useAtom(
 		metadataEditorDialogAtom,
@@ -380,6 +424,9 @@ export const MetadataEditor = () => {
 	const [customKey, setCustomKey] = useState("");
 	const [lyricLines, setLyricLines] = useImmerAtom(lyricLinesAtom);
 	const addKeyButtonRef = useRef<HTMLButtonElement | null>(null);
+	const [presetMenuOpen, setPresetMenuOpen] = useState(false);
+	const [batchEditTarget, setBatchEditTarget] = useState<BatchEditTarget | null>(null);
+	const [batchInputText, setBatchInputText] = useState("");
 
 	const { t } = useTranslation();
 
@@ -582,6 +629,70 @@ export const MetadataEditor = () => {
 		addKeyButtonRef.current?.focus();
 	}, []);
 
+	const addMetadataKey = useCallback(
+		(key: string) => {
+			const normalizedKey = key.trim();
+			if (!normalizedKey) return;
+
+			setLyricLines((prev) => {
+				const existsKey = prev.metadata.find((item) => item.key === normalizedKey);
+				if (existsKey) {
+					existsKey.value.push("");
+				} else {
+					prev.metadata.push({
+						key: normalizedKey,
+						value: [""],
+					});
+				}
+			});
+		},
+		[setLyricLines],
+	);
+
+	const batchLineValues = useMemo(
+		() => parseMetadataLines(batchInputText),
+		[batchInputText],
+	);
+
+	const currentBatchExistingValues = useMemo(() => {
+		if (!batchEditTarget) return [];
+
+		return (
+			lyricLines.metadata
+				.find((item) => item.key === batchEditTarget.key)
+				?.value.filter((value) => value.trim() !== "") ?? []
+		);
+	}, [batchEditTarget, lyricLines.metadata]);
+
+	const openPresetBatchDialog = useCallback((key: string, label: string) => {
+		setBatchInputText("");
+		setBatchEditTarget({ key, label });
+	}, []);
+
+	const closeBatchDialog = useCallback(() => {
+		setBatchEditTarget(null);
+		setBatchInputText("");
+	}, []);
+
+	const applyBatchEdit = useCallback(() => {
+		if (!batchEditTarget || batchLineValues.length === 0) return;
+
+		setLyricLines((prev) => {
+			const existsKey = prev.metadata.find(
+				(item) => item.key === batchEditTarget.key,
+			);
+			if (existsKey) {
+				existsKey.value = mergeMetadataValues(existsKey.value, batchLineValues);
+			} else {
+				prev.metadata.push({
+					key: batchEditTarget.key,
+					value: [...batchLineValues],
+				});
+			}
+		});
+		closeBatchDialog();
+	}, [batchEditTarget, batchLineValues, closeBatchDialog, setLyricLines]);
+
 	return (
 		<Dialog.Root
 			open={metadataEditorDialog}
@@ -624,6 +735,7 @@ export const MetadataEditor = () => {
 								setLyricLines={setLyricLines}
 								option={findOptionByKey(v.key)}
 								focusAddKeyButton={focusAddKeyButton}
+								onOpenBatchEdit={openPresetBatchDialog}
 							/>
 						))}
 					</table>
@@ -636,7 +748,7 @@ export const MetadataEditor = () => {
 					}}
 					className={styles.dialogFooter}
 				>
-					<DropdownMenu.Root>
+					<DropdownMenu.Root open={presetMenuOpen} onOpenChange={setPresetMenuOpen}>
 						<DropdownMenu.Trigger
 							style={{
 								flex: "1 0 auto",
@@ -659,50 +771,51 @@ export const MetadataEditor = () => {
 								/>
 								<IconButton
 									variant="soft"
+									disabled={customKey.trim() === ""}
 									onClick={() => {
-										setLyricLines((prev) => {
-											const existsKey = prev.metadata.find(
-												(k) => k.key === customKey,
-											);
-											if (existsKey) {
-												existsKey.value.push("");
-											} else {
-												prev.metadata.push({
-													key: customKey,
-													value: [""],
-												});
-											}
-										});
+										addMetadataKey(customKey);
+										setCustomKey("");
+										setPresetMenuOpen(false);
 									}}
 								>
 									<Add16Regular />
 								</IconButton>
 							</Flex>
 							{builtinOptions.map((v) => (
-								<DropdownMenu.Item
+								<Flex
 									key={`builtin-option-${v.value}`}
-									shortcut={v.value}
-									onClick={() => {
-										setLyricLines((prev) => {
-											const existsKey = prev.metadata.find(
-												(k) => k.key === v.value,
-											);
-											if (existsKey) {
-												existsKey.value.push("");
-											} else {
-												prev.metadata.push({
-													key: v.value,
-													value: [""],
-												});
-											}
-										});
-									}}
+									gap="1"
+									align="center"
+									className={styles.presetMenuRow}
 								>
-									<Flex gap="2" align="center">
-										{v.icon}
-										{v.label}
-									</Flex>
-								</DropdownMenu.Item>
+									<DropdownMenu.Item
+										className={styles.presetMenuItem}
+										shortcut={v.value}
+										onClick={() => {
+											addMetadataKey(v.value);
+											setPresetMenuOpen(false);
+										}}
+									>
+										<Flex gap="2" align="center">
+											{v.icon}
+											{v.label}
+										</Flex>
+									</DropdownMenu.Item>
+									<IconButton
+										size="1"
+										variant="ghost"
+										className={styles.presetEditButton}
+										title={t("metadataDialog.batchEdit", "批量填写")}
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											setPresetMenuOpen(false);
+											openPresetBatchDialog(v.value, v.label);
+										}}
+									>
+										<Edit16Regular />
+									</IconButton>
+								</Flex>
 							))}
 						</DropdownMenu.Content>
 					</DropdownMenu.Root>
@@ -753,6 +866,74 @@ export const MetadataEditor = () => {
 						</a>
 					</Button>
 				</Flex>
+				<Dialog.Root
+					open={!!batchEditTarget}
+					onOpenChange={(open) => {
+						if (!open) closeBatchDialog();
+					}}
+				>
+					<Dialog.Content className={styles.batchDialogContent}>
+						<Dialog.Title>
+							{t("metadataDialog.batchEditTitle", "批量填写预设")}
+							{batchEditTarget ? `：${batchEditTarget.label}` : ""}
+						</Dialog.Title>
+						<Flex direction="column" gap="3">
+							<Text size="2" color="gray">
+								{t(
+									"metadataDialog.batchHint",
+									"每行输入一个新值，按回车换行；当前已有值会保留，并与本次输入内容自动去重合并。",
+								)}
+							</Text>
+							{currentBatchExistingValues.length > 0 && (
+								<Flex
+									direction="column"
+									gap="2"
+									className={styles.batchExistingBlock}
+								>
+									<Text size="2" weight="medium">
+										{t("metadataDialog.batchExistingValues", "当前已有值")}：
+										{currentBatchExistingValues.length}
+									</Text>
+									<div className={styles.batchExistingList}>
+										{currentBatchExistingValues.map((value, index) => (
+											<Text
+												key={`batch-existing-${batchEditTarget?.key ?? "unknown"}-${index}`}
+												size="1"
+												className={styles.batchExistingItem}
+											>
+												{value}
+											</Text>
+										))}
+									</div>
+								</Flex>
+							)}
+							<TextArea
+								className={styles.batchTextArea}
+								value={batchInputText}
+								onChange={(e) => setBatchInputText(e.currentTarget.value)}
+								placeholder={t(
+									"metadataDialog.batchPlaceholder",
+									"每行输入一个新值",
+								)}
+							/>
+							<Text size="1" color="gray">
+								{t("metadataDialog.batchDetected", "待合并条目")}：
+								{batchLineValues.length}
+							</Text>
+							<Flex justify="end" gap="2">
+								<Button variant="soft" color="gray" onClick={closeBatchDialog}>
+									{t("common.cancel", "取消")}
+								</Button>
+								<Button
+									disabled={batchLineValues.length === 0}
+									onClick={applyBatchEdit}
+								>
+									{t("metadataDialog.batchApply", "合并填充")}
+								</Button>
+							</Flex>
+						</Flex>
+					</Dialog.Content>
+				</Dialog.Root>
 			</Dialog.Content>
 		</Dialog.Root>
 	);

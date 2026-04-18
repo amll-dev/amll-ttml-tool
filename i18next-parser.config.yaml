@@ -1,4 +1,14 @@
 locales:
-    - zh-CN
+    - cs-CZ
+    - da-DK
     - en-US
+    - es-ES
+    - fr-FR
+    - id-ID
+    - pl-PL
+    - pt-BR
+    - ru-RU
+    - sk-SK
+    - zh-CN
 pluralSeparator: false
+

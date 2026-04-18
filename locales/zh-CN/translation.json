@@ -494,7 +494,15 @@
 		"openLink": "打开链接",
 		"duplicateMsg": "存在重复的元数据值",
 		"addValue": "添加",
+		"batchEdit": "批量填写",
+		"batchEditTitle": "批量填写预设",
+		"batchHint": "每行输入一个新值，按回车换行；当前已有值会保留，并与本次输入内容自动去重合并。",
+		"batchExistingValues": "当前已有值",
+		"batchPlaceholder": "每行输入一个新值",
+		"batchDetected": "待合并条目",
+		"batchApply": "合并填充",
 		"builtinOptions": {
+
 			"musicName": "歌曲名称",
 			"artists": "歌曲的艺术家",
 			"artistsInvalidMsg": "如果有多个艺术家，请多次添加该键值，避免使用分隔符号；若艺术家名本身包含分隔符号，请忽略此提示",

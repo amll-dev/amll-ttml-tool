@@ -453,6 +453,13 @@
 		"openLink": "Abrir enlace",
 		"duplicateMsg": "Se encontraron valores de metadatos duplicados",
 		"addValue": "Añadir",
+		"batchEdit": "Relleno por lotes",
+		"batchEditTitle": "Relleno por lotes del preajuste",
+		"batchHint": "Introduce un valor nuevo por línea. Los valores existentes se conservarán y se combinarán automáticamente sin duplicados al aplicar.",
+		"batchExistingValues": "Valores existentes",
+		"batchPlaceholder": "Introduce un valor nuevo por línea",
+		"batchDetected": "Elementos para combinar",
+		"batchApply": "Combinar y rellenar",
 		"builtinOptions": {
 			"musicName": "Nombre de la pista",
 			"artists": "Artistas de la pista",
