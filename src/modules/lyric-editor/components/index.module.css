@@ -271,6 +271,14 @@
 	color: var(--gray-a7);
 }
 
+.lyricWord.radical:not(.selected):not(.error) {
+	background-color: var(--orange-a3);
+}
+
+.lyricWord.radical:not(.selected):not(.error):hover {
+	background-color: var(--orange-a4);
+}
+
 .lyricWord:not(.error):hover,
 .lyricLine:not(.error):hover {
 	box-shadow: 0 0 0 2px var(--accent-a5);
