@@ -1,0 +1,29 @@
+.groupPanel {
+	padding: var(--space-3);
+	background: var(--gray-a2);
+	border: 1px solid var(--gray-a4);
+	border-radius: var(--radius-3);
+}
+
+.groupPanel :global(.rt-TextFieldRoot) {
+	width: 100%;
+}
+
+.shortcutField {
+	background: #f7f7f9;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	box-shadow: none;
+}
+
+.shortcutField :global(input) {
+	color: #000000;
+}
+
+.shortcutField[data-listening] {
+	background: var(--accent-3);
+	border-color: var(--accent-7);
+}
+
+.shortcutField[data-listening] :global(input) {
+	color: var(--accent-11);
+}
