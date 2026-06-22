@@ -2,6 +2,24 @@
 	--color-panel: var(--gray-a2);
 }
 
+.radixTheme,
+.radixTheme * {
+	transition:
+		background-color 300ms ease,
+		border-color 300ms ease,
+		box-shadow 300ms ease,
+		color 300ms ease,
+		fill 300ms ease,
+		stroke 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.radixTheme,
+	.radixTheme * {
+		transition: none;
+	}
+}
+
 .appContent {
 	position: relative;
 	z-index: 1;

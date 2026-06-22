@@ -134,11 +134,7 @@ function App() {
 	const customBackgroundBlur = useAtomValue(customBackgroundBlurAtom);
 	const customBackgroundBrightness = useAtomValue(customBackgroundBrightnessAtom);
 	const [hasBackground, setHasBackground] = useState(false);
-	const effectiveTheme = customBackgroundImage
-		? "light"
-		: isDarkTheme
-			? "dark"
-			: "light";
+	const effectiveTheme = isDarkTheme ? "dark" : "light";
 	const { checkUpdate, status, update } = useAppUpdate();
 	const hasNotifiedRef = useRef(false);
 	const setSettingsOpen = useSetAtom(settingsDialogAtom);

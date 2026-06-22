@@ -1,4 +1,14 @@
-import { Button, Flex, Select, Text, TextField } from "@radix-ui/themes";
+import { Add24Regular, Color24Regular } from "@fluentui/react-icons";
+import {
+	Box,
+	Button,
+	Card,
+	Flex,
+	IconButton,
+	Text,
+	TextField,
+	Tooltip,
+} from "@radix-ui/themes";
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,12 +17,76 @@ import {
 	predefinedPalettes,
 	selectedPaletteIdAtom,
 } from "$/modules/spectrogram/states";
+import styles from "./SettingsDialog.module.css";
 
-export const SettingsSpectrogramTab = () => {
+const paletteToGradient = (palette: Uint8Array) => {
+	const samples = Array.from({ length: 8 }, (_, index) => {
+		const colorIndex = Math.round((index / 7) * 255);
+		const dataIndex = colorIndex * 4;
+		const r = palette[dataIndex] ?? 0;
+		const g = palette[dataIndex + 1] ?? 0;
+		const b = palette[dataIndex + 2] ?? 0;
+		const percent = (index / 7) * 100;
+		return `rgb(${r}, ${g}, ${b}) ${percent}%`;
+	});
+
+	return `linear-gradient(to right, ${samples.join(", ")})`;
+};
+
+export const SettingsSpectrogramPalettePage = ({
+	onOpenCustomPalette,
+}: {
+	onOpenCustomPalette: () => void;
+}) => {
 	const { t } = useTranslation();
 	const [selectedPaletteId, setSelectedPaletteId] = useAtom(
 		selectedPaletteIdAtom,
 	);
+
+	return (
+		<Card>
+			<Flex gap="3" align="center">
+				<Color24Regular />
+				<Text wrap="nowrap">{t("settings.spectrogram.palette", "配色方案")}</Text>
+				<Box flexGrow="1">
+					<div className={styles.paletteButtonRow}>
+						{predefinedPalettes.map((palette) => (
+							<Tooltip key={palette.id} content={palette.name}>
+								<button
+									type="button"
+									className={styles.paletteButton}
+									data-active={selectedPaletteId === palette.id || undefined}
+									onClick={() => setSelectedPaletteId(palette.id)}
+									aria-label={palette.name}
+								>
+									<span
+										className={styles.palettePreview}
+										style={{ backgroundImage: paletteToGradient(palette.data) }}
+									/>
+								</button>
+							</Tooltip>
+						))}
+						<Tooltip content={t("settings.spectrogram.paletteCustom", "自定义")}>
+							<IconButton
+								variant={selectedPaletteId === "custom" ? "soft" : "outline"}
+								aria-label={t("settings.spectrogram.paletteCustom", "自定义")}
+								onClick={() => {
+									setSelectedPaletteId("custom");
+									onOpenCustomPalette();
+								}}
+							>
+								<Add24Regular />
+							</IconButton>
+						</Tooltip>
+					</div>
+				</Box>
+			</Flex>
+		</Card>
+	);
+};
+
+export const SettingsSpectrogramCustomPalettePage = () => {
+	const { t } = useTranslation();
 	const [globalStops, setGlobalStops] = useAtom(customPaletteStopsAtom);
 	const [localStops, setLocalStops] = useState(globalStops);
 
@@ -68,110 +142,83 @@ export const SettingsSpectrogramTab = () => {
 
 	return (
 		<Flex direction="column" gap="4">
-			<Text as="label">
-				<Flex direction="column" gap="2" align="start">
-					<Text>{t("settings.spectrogram.palette", "配色方案")}</Text>
-					<Select.Root
-						value={selectedPaletteId}
-						onValueChange={(v) => setSelectedPaletteId(v)}
-					>
-						<Select.Trigger />
-						<Select.Content>
-							{predefinedPalettes.map((palette) => (
-								<Select.Item key={palette.id} value={palette.id}>
-									{palette.name}
-								</Select.Item>
-							))}
-							<Select.Separator />
-							<Select.Item value="custom">
-								{t("settings.spectrogram.paletteCustom", "自定义")}
-							</Select.Item>
-						</Select.Content>
-					</Select.Root>
-				</Flex>
-			</Text>
+			<Flex
+				asChild
+				p="2"
+				style={{
+					border: "1px solid var(--gray-a5)",
+					borderRadius: "var(--radius-3)",
+				}}
+			>
+				<section>
+					<Flex direction="column" gap="3" width="100%">
+						<Text size="1" color="gray">
+							{t(
+								"settings.spectrogram.gradientEditorDesc",
+								"Pos 0.0 对应最安静的部分，1.0 对应最响亮的部分。建议 Pos 越大，使用亮度越高的颜色。",
+							)}
+						</Text>
 
-			{selectedPaletteId === "custom" && (
-				<Flex
-					asChild
-					p="2"
-					style={{
-						border: "1px solid var(--gray-a5)",
-						borderRadius: "var(--radius-3)",
-					}}
-				>
-					<section>
-						<Flex direction="column" gap="3" width="100%">
-							<Text size="1" color="gray">
-								{t(
-									"settings.spectrogram.gradientEditorDesc",
-									"Pos 0.0 对应最安静的部分，1.0 对应最响亮的部分。建议 Pos 越大，使用亮度越高的颜色。",
-								)}
-							</Text>
+						<div
+							style={{
+								width: "100%",
+								height: "24px",
+								backgroundImage: gradientCss,
+								border: "1px solid var(--gray-a6)",
+								borderRadius: "var(--radius-2)",
+							}}
+						/>
 
-							<div
-								style={{
-									width: "100%",
-									height: "24px",
-									backgroundImage: gradientCss,
-									border: "1px solid var(--gray-a6)",
-									borderRadius: "var(--radius-2)",
-								}}
-							/>
-
-							{localStops.map((stop, index) => (
-								<Flex key={stop.id} align="center" gap="2">
-									<input
-										type="color"
-										value={stop.color}
-										onChange={(e) =>
-											handleStopColorChange(index, e.target.value)
-										}
-										onBlur={commitLocalChanges}
-										style={{
-											border: "none",
-											padding: 0,
-											background: "none",
-											width: "28px",
-											height: "28px",
-										}}
-									/>
-									<TextField.Root
-										type="number"
-										min={0}
-										max={1}
-										step={0.01}
-										value={stop.pos}
-										onChange={(e) =>
-											handleStopPosChange(
-												index,
-												e.target.value === ""
-													? NaN
-													: Number.parseFloat(e.target.value),
-											)
-										}
-										onBlur={commitLocalChanges}
-										style={{ maxWidth: "80px" }}
-									/>
-									<Text size="1">Pos: {stop.pos.toFixed(2)}</Text>
-									<Button
-										variant="soft"
-										color="red"
-										disabled={localStops.length <= 1}
-										onClick={() => handleRemoveStop(index)}
-										style={{ marginLeft: "auto" }}
-									>
-										{t("common.remove", "移除")}
-									</Button>
-								</Flex>
-							))}
-							<Button variant="outline" onClick={handleAddStop}>
-								{t("settings.spectrogram.addStop", "添加色标")}
-							</Button>
-						</Flex>
-					</section>
-				</Flex>
-			)}
+						{localStops.map((stop, index) => (
+							<Flex key={stop.id} align="center" gap="2">
+								<input
+									type="color"
+									value={stop.color}
+									onChange={(e) => handleStopColorChange(index, e.target.value)}
+									onBlur={commitLocalChanges}
+									style={{
+										border: "none",
+										padding: 0,
+										background: "none",
+										width: "28px",
+										height: "28px",
+									}}
+								/>
+								<TextField.Root
+									type="number"
+									min={0}
+									max={1}
+									step={0.01}
+									value={stop.pos}
+									onChange={(e) =>
+										handleStopPosChange(
+											index,
+											e.target.value === ""
+												? NaN
+												: Number.parseFloat(e.target.value),
+										)
+									}
+									onBlur={commitLocalChanges}
+									style={{ maxWidth: "80px" }}
+								/>
+								<Text size="1">Pos: {stop.pos.toFixed(2)}</Text>
+								<Button
+									variant="soft"
+									color="red"
+									disabled={localStops.length <= 1}
+									onClick={() => handleRemoveStop(index)}
+									style={{ marginLeft: "auto" }}
+								>
+									{t("common.remove", "移除")}
+								</Button>
+							</Flex>
+						))}
+						<Button variant="outline" onClick={handleAddStop}>
+							{t("settings.spectrogram.addStop", "添加色标")}
+						</Button>
+					</Flex>
+				</section>
+			</Flex>
 		</Flex>
 	);
 };

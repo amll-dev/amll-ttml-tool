@@ -12,9 +12,18 @@ import {
 	Timer24Regular,
 	TopSpeed24Regular,
 } from "@fluentui/react-icons";
-import { Box, Card, Flex, Heading, Select, Slider, Switch, Text, TextField } from "@radix-ui/themes";
+import {
+	Box,
+	Card,
+	Flex,
+	Heading,
+	Select,
+	Slider,
+	Switch,
+	Text,
+	TextField,
+} from "@radix-ui/themes";
 import { useAtom } from "jotai";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { playbackRateAtom, volumeAtom } from "$/modules/audio/states";
 import {
@@ -32,10 +41,6 @@ import {
 	KeyBindingTriggerMode,
 	keyBindingTriggerModeAtom,
 } from "$/utils/keybindings";
-import {
-	SettingsCustomBackgroundCard,
-	SettingsCustomBackgroundSettings,
-} from "./customBackground";
 
 const languageOptions: readonly string[] = Object.keys(resources);
 
@@ -54,7 +59,6 @@ export const SettingsCommonTab = () => {
 	const [autosaveLimit, setAutosaveLimit] = useAtom(autosaveLimitAtom);
 	const { t, i18n } = useTranslation();
 	const currentLanguage = i18n.resolvedLanguage || i18n.language;
-	const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
 
 	const getLanguageName = (code: string, locale: string) => {
 		try {
@@ -85,14 +89,6 @@ export const SettingsCommonTab = () => {
 		}
 		return code;
 	};
-
-	if (showBackgroundSettings) {
-		return (
-			<SettingsCustomBackgroundSettings
-				onClose={() => setShowBackgroundSettings(false)}
-			/>
-		);
-	}
 
 	return (
 		<Flex direction="column" gap="4">
@@ -177,10 +173,6 @@ export const SettingsCommonTab = () => {
 						</Box>
 					</Flex>
 				</Card>
-
-				<SettingsCustomBackgroundCard
-					onOpen={() => setShowBackgroundSettings(true)}
-				/>
 			</Flex>
 
 			<Flex direction="column" gap="3">

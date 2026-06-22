@@ -29,7 +29,7 @@ export enum ToolMode {
 }
 
 export const toolModeAtom = atom(ToolMode.Edit);
-export const darkModeAtom = atom(DarkMode.Auto);
+export const darkModeAtom = atomWithStorage("darkMode", DarkMode.Auto);
 export const isDarkThemeAtom = atom((get) => {
 	if (get(darkModeAtom) === DarkMode.Auto) return get(autoDarkModeAtom);
 	return get(darkModeAtom) === DarkMode.Dark;

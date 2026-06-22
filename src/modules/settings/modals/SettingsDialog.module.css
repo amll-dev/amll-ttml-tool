@@ -92,11 +92,43 @@
 
 .header {
 	flex: 0 0 auto;
-	padding: var(--space-5) var(--space-5) var(--space-2);
+	padding: var(--space-5) var(--space-5) var(--space-4);
 }
 
 .pageTitle {
 	line-height: 1.1;
+}
+
+.titleText {
+	display: inline-flex;
+	align-items: baseline;
+	min-height: 1.1em;
+	gap: var(--space-2);
+}
+
+.titleSeparator {
+	color: var(--gray-9);
+	font-size: 0.78em;
+	font-weight: 400;
+}
+
+.titleButton {
+	padding: 0;
+	color: inherit;
+	font: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+}
+
+.titleButton:hover {
+	color: var(--accent-11);
+}
+
+.titleCurrent {
+	color: var(--gray-12);
 }
 
 .scrollContent {
@@ -104,6 +136,47 @@
 	flex: 1 1 auto;
 	padding: 0 var(--space-5) var(--space-5);
 	overflow: auto;
+}
+
+.contentTransition {
+	min-height: 100%;
+}
+
+.paletteButtonRow {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	width: 100%;
+	min-width: 0;
+	overflow-x: auto;
+}
+
+.paletteButton {
+	width: 54px;
+	height: 34px;
+	flex: 0 0 auto;
+	padding: 3px;
+	background: transparent;
+	border: 1px solid var(--gray-a8);
+	border-radius: var(--radius-2);
+	cursor: pointer;
+}
+
+.paletteButton:hover {
+	border-color: var(--accent-8);
+}
+
+.paletteButton[data-active] {
+	border-color: var(--accent-9);
+	box-shadow: 0 0 0 1px var(--accent-9);
+}
+
+.palettePreview {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: calc(var(--radius-2) - 2px);
 }
 
 @media (max-width: 720px) {
@@ -139,7 +212,7 @@
 	}
 
 	.header {
-		padding: var(--space-4) var(--space-4) var(--space-2);
+		padding: var(--space-4) var(--space-4) var(--space-3);
 	}
 
 	.scrollContent {
