@@ -1,7 +1,5 @@
 import { DarkTheme24Regular } from "@fluentui/react-icons";
 import {
-	Box,
-	Card,
 	Flex,
 	Heading,
 	SegmentedControl,
@@ -15,6 +13,7 @@ import {
 	SettingsCustomBackgroundCard,
 	SettingsCustomBackgroundSettings,
 } from "./customBackground";
+import styles from "./SettingsDialog.module.css";
 import {
 	SettingsSpectrogramCustomPalettePage,
 	SettingsSpectrogramPalettePage,
@@ -29,7 +28,6 @@ export const SettingsPersonalizationTab = ({
 }) => {
 	const [darkMode, setDarkMode] = useAtom(darkModeAtom);
 	const { t } = useTranslation();
-	const backgroundGroupTitle = t("settings.group.background", "背景");
 	const spectrogramTitle = t("settingsDialog.tab.spectrogram", "频谱图");
 
 	const subpageContent =
@@ -60,52 +58,42 @@ export const SettingsPersonalizationTab = ({
 					transition={{ duration: 0.18, ease: "easeOut" }}
 				>
 					<Flex direction="column" gap="4">
-						<Flex direction="column" gap="2">
-							<Heading size="4">
-								{t("settings.group.appearance", "外观")}
-							</Heading>
+						<section className={styles.settingsGroup}>
+							<div className={styles.settingsRow}>
+								<DarkTheme24Regular className={styles.settingsRowIcon} />
+								<div className={styles.settingsRowContent}>
+									<Text weight="bold">
+										{t("settings.personalization.theme", "外观主题")}
+									</Text>
+									<Text size="1" color="gray">
+										{t(
+											"settings.personalization.themeDesc",
+											"选择界面使用浅色、深色，或跟随系统设置。",
+										)}
+									</Text>
+								</div>
+								<div className={styles.settingsRowAction}>
+									<SegmentedControl.Root
+										value={darkMode}
+										onValueChange={(value) => setDarkMode(value as DarkMode)}
+									>
+										<SegmentedControl.Item value={DarkMode.Light}>
+											{t("settings.personalization.themeLight", "浅色")}
+										</SegmentedControl.Item>
+										<SegmentedControl.Item value={DarkMode.Dark}>
+											{t("settings.personalization.themeDark", "深色")}
+										</SegmentedControl.Item>
+										<SegmentedControl.Item value={DarkMode.Auto}>
+											{t("settings.personalization.themeAuto", "自动")}
+										</SegmentedControl.Item>
+									</SegmentedControl.Root>
+								</div>
+							</div>
 
-							<Card>
-								<Flex gap="3" align="center">
-									<DarkTheme24Regular />
-									<Box flexGrow="1">
-										<Flex align="center" justify="between" gap="4">
-											<Flex direction="column" gap="1">
-												<Text>{t("settings.personalization.theme", "主题")}</Text>
-												<Text size="1" color="gray">
-													{t(
-														"settings.personalization.themeDesc",
-														"选择界面使用浅色、深色，或跟随系统设置。",
-													)}
-												</Text>
-											</Flex>
-
-											<SegmentedControl.Root
-												value={darkMode}
-												onValueChange={(value) => setDarkMode(value as DarkMode)}
-											>
-												<SegmentedControl.Item value={DarkMode.Light}>
-													{t("settings.personalization.themeLight", "浅色")}
-												</SegmentedControl.Item>
-												<SegmentedControl.Item value={DarkMode.Dark}>
-													{t("settings.personalization.themeDark", "深色")}
-												</SegmentedControl.Item>
-												<SegmentedControl.Item value={DarkMode.Auto}>
-													{t("settings.personalization.themeAuto", "自动")}
-												</SegmentedControl.Item>
-											</SegmentedControl.Root>
-										</Flex>
-									</Box>
-								</Flex>
-							</Card>
-						</Flex>
-
-						<Flex direction="column" gap="2">
-							<Heading size="4">{backgroundGroupTitle}</Heading>
 							<SettingsCustomBackgroundCard
 								onOpen={() => onSubpageChange("customBackground")}
 							/>
-						</Flex>
+						</section>
 
 						<Flex direction="column" gap="2">
 							<Heading size="4">{spectrogramTitle}</Heading>

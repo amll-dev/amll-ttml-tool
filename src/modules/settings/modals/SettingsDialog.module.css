@@ -142,6 +142,44 @@
 	min-height: 100%;
 }
 
+.settingsGroup {
+	overflow: hidden;
+	background: var(--gray-a2);
+	border: 1px solid var(--gray-a4);
+	border-radius: var(--radius-3);
+}
+
+.settingsRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: 62px;
+	padding: var(--space-3) var(--space-4);
+}
+
+.settingsRow + .settingsRow {
+	border-top: 1px solid var(--gray-a5);
+}
+
+.settingsRowIcon {
+	width: 22px;
+	height: 22px;
+	flex: 0 0 auto;
+	color: var(--gray-10);
+}
+
+.settingsRowContent {
+	display: flex;
+	min-width: 0;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.settingsRowAction {
+	flex: 0 0 auto;
+}
+
 .paletteButtonRow {
 	display: flex;
 	align-items: center;
@@ -217,5 +255,15 @@
 
 	.scrollContent {
 		padding: 0 var(--space-4) var(--space-4);
+	}
+
+	.settingsRow {
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.settingsRowAction {
+		width: 100%;
+		padding-left: calc(22px + var(--space-3));
 	}
 }

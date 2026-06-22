@@ -64,7 +64,10 @@ export const SettingsDialog = memo(() => {
 			? activeSubpage === "customBackground"
 				? t("settings.common.customBackground", "自定义背景")
 				: activeSubpage === "customPalette"
-					? t("settings.spectrogram.paletteCustom", "自定义")
+					? t(
+							"settings.spectrogram.customPaletteTitle",
+							"自定义频谱图配色",
+						)
 					: null
 			: null;
 	const titleKey = `${activeTab}:${subpageTitle ?? ""}`;

@@ -4,7 +4,6 @@ import {
 	Image24Regular,
 } from "@fluentui/react-icons";
 import {
-	Box,
 	Button,
 	Card,
 	Flex,
@@ -17,6 +16,7 @@ import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import styles from "./SettingsDialog.module.css";
 
 const CUSTOM_BACKGROUND_DB = "amll-custom-background";
 const CUSTOM_BACKGROUND_STORE = "background-image";
@@ -355,35 +355,25 @@ export const SettingsCustomBackgroundCard = ({
 	const { t } = useTranslation();
 
 	return (
-		<Card style={{ width: "100%", marginBottom: "var(--space-1)" }}>
-			<Flex gap="3" align="center">
-				<Image24Regular />
-				<Box flexGrow="1">
-					<Flex align="center" justify="between" gap="4">
-						<Flex direction="column" gap="1">
-							<Text>{t("settings.common.customBackground", "自定义背景")}</Text>
-							<Text size="1" color="gray">
-								{customBackgroundImage
-									? t(
-											"settings.common.customBackgroundEnabled",
-											"已设置背景",
-										)
-									: t(
-											"settings.common.customBackgroundDesc",
-											"选择一张图片作为背景。",
-										)}
-							</Text>
-						</Flex>
-						<IconButton
-							variant="ghost"
-							aria-label={t("settings.common.customBackgroundManage", "设置")}
-							onClick={onOpen}
-						>
-							<ChevronRight24Regular />
-						</IconButton>
-					</Flex>
-				</Box>
-			</Flex>
-		</Card>
+		<div className={styles.settingsRow}>
+			<Image24Regular className={styles.settingsRowIcon} />
+			<div className={styles.settingsRowContent}>
+				<Text weight="bold">
+					{t("settings.common.customBackground", "自定义背景")}
+				</Text>
+				<Text size="1" color="gray">
+					{customBackgroundImage
+						? t("settings.common.customBackgroundEnabled", "已设置背景")
+						: t("settings.common.customBackgroundDesc", "选择一张图片作为背景。")}
+				</Text>
+			</div>
+			<IconButton
+				variant="ghost"
+				aria-label={t("settings.common.customBackgroundManage", "设置")}
+				onClick={onOpen}
+			>
+				<ChevronRight24Regular />
+			</IconButton>
+		</div>
 	);
 };
