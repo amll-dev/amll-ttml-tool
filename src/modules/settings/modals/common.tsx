@@ -1,6 +1,8 @@
 import resources from "virtual:i18next-loader";
 import {
 	ContentView24Regular,
+	DeveloperBoard24Regular,
+	NumberSymbol24Regular,
 	History24Regular,
 	Keyboard12324Regular,
 	LocalLanguage24Regular,
@@ -26,10 +28,13 @@ import {
 import { useAtom } from "jotai";
 import { useTranslation } from "react-i18next";
 import { playbackRateAtom, volumeAtom } from "$/modules/audio/states";
+import { applyDefaultTtmlAuthorMetadata } from "$/modules/project/logic/default-metadata";
 import {
 	autosaveEnabledAtom,
 	autosaveIntervalAtom,
 	autosaveLimitAtom,
+	defaultTtmlAuthorGithubAtom,
+	defaultTtmlAuthorGithubLoginAtom,
 	LayoutMode,
 	layoutModeAtom,
 	SyncJudgeMode,
@@ -37,6 +42,7 @@ import {
 	smartLastWordAtom,
 	syncJudgeModeAtom,
 } from "$/modules/settings/states";
+import { lyricLinesAtom } from "$/states/main";
 import {
 	KeyBindingTriggerMode,
 	keyBindingTriggerModeAtom,
@@ -57,8 +63,29 @@ export const SettingsCommonTab = () => {
 	const [autosaveEnabled, setAutosaveEnabled] = useAtom(autosaveEnabledAtom);
 	const [autosaveInterval, setAutosaveInterval] = useAtom(autosaveIntervalAtom);
 	const [autosaveLimit, setAutosaveLimit] = useAtom(autosaveLimitAtom);
+	const [defaultTtmlAuthorGithub, setDefaultTtmlAuthorGithub] = useAtom(
+		defaultTtmlAuthorGithubAtom,
+	);
+	const [defaultTtmlAuthorGithubLogin, setDefaultTtmlAuthorGithubLogin] =
+		useAtom(defaultTtmlAuthorGithubLoginAtom);
+	const [, setLyricLines] = useAtom(lyricLinesAtom);
 	const { t, i18n } = useTranslation();
 	const currentLanguage = i18n.resolvedLanguage || i18n.language;
+
+	const applyDefaultAuthors = (githubId: string, githubLogin: string) => {
+		setLyricLines((prev) => {
+			const metadata = prev.metadata.map((item) => ({
+				...item,
+				value: [...item.value],
+			}));
+			const changed = applyDefaultTtmlAuthorMetadata(metadata, {
+				githubId,
+				githubLogin,
+			});
+			if (!changed) return prev;
+			return { ...prev, metadata };
+		});
+	};
 
 	const getLanguageName = (code: string, locale: string) => {
 		try {
@@ -169,6 +196,79 @@ export const SettingsCommonTab = () => {
 										</Select.Item>
 									</Select.Content>
 								</Select.Root>
+							</Flex>
+						</Box>
+					</Flex>
+				</Card>
+			</Flex>
+
+			<Flex direction="column" gap="2">
+				<Heading size="4">{t("settings.group.metadata", "元数据")}</Heading>
+
+				<Card>
+					<Flex gap="3" align="center">
+						<NumberSymbol24Regular />
+						<Box flexGrow="1">
+							<Flex align="center" justify="between" gap="4">
+								<Flex direction="column" gap="1">
+									<Text>
+										{t(
+											"settings.common.defaultTtmlAuthorGithub",
+											"默认 TTML 作者 GitHub ID",
+										)}
+									</Text>
+									<Text size="1" color="gray">
+										{t(
+											"settings.common.defaultTtmlAuthorGithubDesc",
+											"当 ttmlAuthorGithub 为空时自动填入",
+										)}
+									</Text>
+								</Flex>
+
+								<TextField.Root
+									value={defaultTtmlAuthorGithub}
+									onChange={(e) => {
+										const nextValue = e.currentTarget.value;
+										setDefaultTtmlAuthorGithub(nextValue);
+										applyDefaultAuthors(
+											nextValue,
+											defaultTtmlAuthorGithubLogin,
+										);
+									}}
+								/>
+							</Flex>
+						</Box>
+					</Flex>
+				</Card>
+
+				<Card>
+					<Flex gap="3" align="center">
+						<DeveloperBoard24Regular />
+						<Box flexGrow="1">
+							<Flex align="center" justify="between" gap="4">
+								<Flex direction="column" gap="1">
+									<Text>
+										{t(
+											"settings.common.defaultTtmlAuthorGithubLogin",
+											"默认 TTML 作者用户名",
+										)}
+									</Text>
+									<Text size="1" color="gray">
+										{t(
+											"settings.common.defaultTtmlAuthorGithubLoginDesc",
+											"当 ttmlAuthorGithubLogin 为空时自动填入",
+										)}
+									</Text>
+								</Flex>
+
+								<TextField.Root
+									value={defaultTtmlAuthorGithubLogin}
+									onChange={(e) => {
+										const nextValue = e.currentTarget.value;
+										setDefaultTtmlAuthorGithubLogin(nextValue);
+										applyDefaultAuthors(defaultTtmlAuthorGithub, nextValue);
+									}}
+								/>
 							</Flex>
 						</Box>
 					</Flex>

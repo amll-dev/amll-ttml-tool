@@ -54,6 +54,16 @@ export const autosaveEnabledAtom = atomWithStorage("autosaveEnabled", true);
 export const autosaveIntervalAtom = atomWithStorage("autosaveInterval", 10);
 export const autosaveLimitAtom = atomWithStorage("autosaveLimit", 10);
 
+export const defaultTtmlAuthorGithubAtom = atomWithStorage(
+	"defaultTtmlAuthorGithub",
+	"",
+);
+
+export const defaultTtmlAuthorGithubLoginAtom = atomWithStorage(
+	"defaultTtmlAuthorGithubLogin",
+	"",
+);
+
 export const showTimestampsAtom = atomWithStorage("showTimestamps", true);
 
 export const highlightActiveWordAtom = atomWithStorage(
