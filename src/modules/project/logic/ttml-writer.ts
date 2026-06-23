@@ -100,11 +100,7 @@ export default function exportTTMLText(ttmlLyric: TTMLLyric): string {
 		return null;
 	}
 
-	function addWrapperToElement(
-		el: Element,
-		prefix: string,
-		suffix: string,
-	) {
+	function addWrapperToElement(el: Element, prefix: string, suffix: string) {
 		if (!prefix && !suffix) return;
 		const first = findFirstTextNode(el);
 		const last = findLastTextNode(el);
@@ -125,7 +121,7 @@ export default function exportTTMLText(ttmlLyric: TTMLLyric): string {
 		const span = doc.createElement("span");
 		span.setAttribute("begin", msToTimestamp(word.startTime));
 		span.setAttribute("end", msToTimestamp(word.endTime));
-		span.appendChild(doc.createTextNode(word.romanWord));
+		span.appendChild(doc.createTextNode(word.romanWord ?? ""));
 		return span;
 	}
 
@@ -213,9 +209,12 @@ export default function exportTTMLText(ttmlLyric: TTMLLyric): string {
 	for (const metadata of ttmlLyric.metadata) {
 		if (metadata.key === "songwriter") continue;
 		for (const value of metadata.value) {
+			const trimmed = value.trim();
+			if (!trimmed) continue;
+
 			const metaEl = doc.createElement("amll:meta");
 			metaEl.setAttribute("key", metadata.key);
-			metaEl.setAttribute("value", value);
+			metaEl.setAttribute("value", trimmed);
 			metadataEl.appendChild(metaEl);
 		}
 	}
