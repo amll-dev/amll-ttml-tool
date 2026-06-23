@@ -1,8 +1,6 @@
 import { Add24Regular, Color24Regular } from "@fluentui/react-icons";
 import {
-	Box,
 	Button,
-	Card,
 	Flex,
 	IconButton,
 	Text,
@@ -18,6 +16,7 @@ import {
 	selectedPaletteIdAtom,
 } from "$/modules/spectrogram/states";
 import styles from "./SettingsDialog.module.css";
+import { SettingsRow } from "./SettingsGroup";
 
 const paletteToGradient = (palette: Uint8Array) => {
 	const samples = Array.from({ length: 8 }, (_, index) => {
@@ -44,44 +43,42 @@ export const SettingsSpectrogramPalettePage = ({
 	);
 
 	return (
-		<Card>
-			<Flex gap="3" align="center">
-				<Color24Regular />
-				<Text wrap="nowrap">{t("settings.spectrogram.palette", "配色方案")}</Text>
-				<Box flexGrow="1">
-					<div className={styles.paletteButtonRow}>
-						{predefinedPalettes.map((palette) => (
-							<Tooltip key={palette.id} content={palette.name}>
-								<button
-									type="button"
-									className={styles.paletteButton}
-									data-active={selectedPaletteId === palette.id || undefined}
-									onClick={() => setSelectedPaletteId(palette.id)}
-									aria-label={palette.name}
-								>
-									<span
-										className={styles.palettePreview}
-										style={{ backgroundImage: paletteToGradient(palette.data) }}
-									/>
-								</button>
-							</Tooltip>
-						))}
-						<Tooltip content={t("settings.spectrogram.paletteCustom", "自定义")}>
-							<IconButton
-								variant={selectedPaletteId === "custom" ? "soft" : "outline"}
-								aria-label={t("settings.spectrogram.paletteCustom", "自定义")}
-								onClick={() => {
-									setSelectedPaletteId("custom");
-									onOpenCustomPalette();
-								}}
+		<SettingsRow
+			icon={<Color24Regular />}
+			title={t("settings.spectrogram.palette", "配色方案")}
+			action={
+				<div className={styles.paletteButtonRow}>
+					{predefinedPalettes.map((palette) => (
+						<Tooltip key={palette.id} content={palette.name}>
+							<button
+								type="button"
+								className={styles.paletteButton}
+								data-active={selectedPaletteId === palette.id || undefined}
+								onClick={() => setSelectedPaletteId(palette.id)}
+								aria-label={palette.name}
 							>
-								<Add24Regular />
-							</IconButton>
+								<span
+									className={styles.palettePreview}
+									style={{ backgroundImage: paletteToGradient(palette.data) }}
+								/>
+							</button>
 						</Tooltip>
-					</div>
-				</Box>
-			</Flex>
-		</Card>
+					))}
+					<Tooltip content={t("settings.spectrogram.paletteCustom", "自定义")}>
+						<IconButton
+							variant={selectedPaletteId === "custom" ? "soft" : "outline"}
+							aria-label={t("settings.spectrogram.paletteCustom", "自定义")}
+							onClick={() => {
+								setSelectedPaletteId("custom");
+								onOpenCustomPalette();
+							}}
+						>
+							<Add24Regular />
+						</IconButton>
+					</Tooltip>
+				</div>
+			}
+		/>
 	);
 };
 

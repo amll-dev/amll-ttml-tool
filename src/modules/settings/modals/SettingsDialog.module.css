@@ -162,10 +162,18 @@
 }
 
 .settingsRowIcon {
+	display: flex;
 	width: 22px;
 	height: 22px;
 	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
 	color: var(--gray-10);
+}
+
+.settingsRowIcon > svg {
+	width: 22px;
+	height: 22px;
 }
 
 .settingsRowContent {
@@ -178,6 +186,7 @@
 
 .settingsRowAction {
 	flex: 0 0 auto;
+	max-width: 60%;
 }
 
 .paletteButtonRow {
@@ -264,6 +273,7 @@
 
 	.settingsRowAction {
 		width: 100%;
+		max-width: none;
 		padding-left: calc(22px + var(--space-3));
 	}
 }

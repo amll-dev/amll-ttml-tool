@@ -10,13 +10,29 @@
 }
 
 .shortcutField {
-	background: #f7f7f9;
-	border: 1px solid rgba(0, 0, 0, 0.08);
+	min-width: 0;
+	background: var(--gray-a2);
+	border: 1px solid var(--gray-a6);
 	box-shadow: none;
 }
 
+.shortcutField:hover {
+	background: var(--gray-a3);
+	border-color: var(--gray-a7);
+}
+
+.shortcutField:focus-within {
+	border-color: var(--accent-a8);
+	box-shadow: 0 0 0 1px var(--accent-a8);
+}
+
 .shortcutField :global(input) {
-	color: #000000;
+	color: var(--gray-12);
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 600;
+	text-align: center;
+	cursor: pointer;
 }
 
 .shortcutField[data-listening] {
