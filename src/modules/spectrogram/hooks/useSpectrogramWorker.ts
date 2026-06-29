@@ -67,10 +67,12 @@ class SpectrogramWorkerClient {
 		});
 	}
 
-	public initAudio(audioData: Float32Array, sampleRate: number) {
-		this.worker.postMessage({ type: "INIT", audioData, sampleRate }, [
-			audioData.buffer,
-		]);
+	public initAudio(sampleRate: number, duration: number) {
+		this.worker.postMessage({ type: "INIT", sampleRate, duration });
+	}
+
+	public releaseAudio() {
+		this.worker.postMessage({ type: "RELEASE" });
 	}
 
 	public setPalette(palette: Uint8Array) {
@@ -84,7 +86,8 @@ class SpectrogramWorkerClient {
 }
 
 export const useSpectrogramWorker = (
-	audioBuffer: AudioBuffer | null,
+	pcmDataReady: boolean,
+	durationInMs: number,
 	paletteData: Uint8Array,
 ) => {
 	const clientRef = useRef<SpectrogramWorkerClient | null>(null);
@@ -116,22 +119,24 @@ export const useSpectrogramWorker = (
 	}, []);
 
 	useEffect(() => {
-		if (audioBuffer && clientRef.current) {
+		if (pcmDataReady && clientRef.current && durationInMs > 0) {
 			tileCache.current.clear();
 			activeRequests.current.clear();
 
-			const channelData = audioBuffer.getChannelData(0);
-			const channelDataCopy = channelData.slice();
-
-			clientRef.current.initAudio(channelDataCopy, audioBuffer.sampleRate);
+			const durationInSeconds = durationInMs / 1000;
+			clientRef.current.initAudio(48000, durationInSeconds);
 
 			if (paletteDataRef.current) {
 				clientRef.current.setPalette(paletteDataRef.current);
 			}
 
-			setLastTileTimestamp(Date.now());
+			setTimeout(() => {
+				setLastTileTimestamp(Date.now());
+			}, 100);
+		} else if (!pcmDataReady && clientRef.current) {
+			clientRef.current.releaseAudio();
 		}
-	}, [audioBuffer]);
+	}, [pcmDataReady, durationInMs]);
 
 	const requestTileIfNeeded = useCallback(
 		async (params: TileGenerationParams) => {

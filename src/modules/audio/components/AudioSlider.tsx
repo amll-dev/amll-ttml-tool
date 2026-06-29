@@ -1,14 +1,15 @@
 import { Card } from "@radix-ui/themes";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import WaveSurfer from "wavesurfer.js";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
 import {
-	audioBufferAtom,
-	audioPlayingAtom,
+	audioEngineStateAtom,
 	currentDurationAtom,
-	currentTimeAtom,
+	loadedAudioAtom,
+	pcmDataReadyAtom,
 } from "$/modules/audio/states";
+import AnalyzerWorker from "$/modules/ffmpeg/worker/analyzer.worker.ts?worker";
+import ffmpegWasmUrl from "$/modules/ffmpeg/worker/wasm/ffmpeg_wasm.wasm?url";
 import { lyricLinesAtom, selectedLinesAtom } from "$/states/main";
 import { useHoverGuide } from "../hooks";
 import { AudioRegion } from "./AudioRegion";
@@ -16,18 +17,19 @@ import styles from "./AudioSlider.module.css";
 import { HoverGuide } from "./HoverGuide";
 
 export const AudioSlider = () => {
-	const setCurrentTime = useSetAtom(currentTimeAtom);
-	const setCurrentDuration = useSetAtom(currentDurationAtom);
-	const setAudioPlaying = useSetAtom(audioPlayingAtom);
-
 	const currentDuration = useAtomValue(currentDurationAtom);
+	const engineState = useAtomValue(audioEngineStateAtom);
+	const audioFile = useAtomValue(loadedAudioAtom);
+	const setPcmDataReady = useSetAtom(pcmDataReadyAtom);
 	const lyricLines = useAtomValue(lyricLinesAtom);
 	const selectedLines = useAtomValue(selectedLinesAtom);
-	const audioBuffer = useAtomValue(audioBufferAtom);
 
 	const wsContainerRef = useRef<HTMLDivElement>(null);
-	const waveSurferRef = useRef<WaveSurfer | null>(null);
-	const playbackFrameRef = useRef(0);
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const cursorRef = useRef<HTMLDivElement>(null);
+
+	const workerRef = useRef<Worker | null>(null);
+	const offscreenTransferred = useRef(false);
 
 	const [sliderWidthPx, setSliderWidthPx] = useState(0);
 
@@ -38,44 +40,18 @@ export const AudioSlider = () => {
 		isDraggingRef,
 	} = useHoverGuide(sliderWidthPx);
 
-	const destroyWaveSurfer = useCallback(() => {
-		if (waveSurferRef.current) {
-			waveSurferRef.current.destroy();
-			waveSurferRef.current = null;
-		}
-	}, []);
+	useEffect(() => {
+		workerRef.current = new AnalyzerWorker();
 
-	const createWaveSurfer = useCallback(() => {
-		if (!wsContainerRef.current || !audioBuffer) {
-			return null;
-		}
-		const height = wsContainerRef.current.clientHeight;
-		const canvasStyles = getComputedStyle(wsContainerRef.current);
-		const fontColor =
-			canvasStyles.getPropertyValue("--accent-a11") || "#00ffa21e";
-		const primaryFillColor =
-			canvasStyles.getPropertyValue("--accent-a4") || "#00ffa21e";
-
-		const peaks = [audioBuffer.getChannelData(0)];
-		const duration = audioBuffer.duration;
-
-		const ws = WaveSurfer.create({
-			container: wsContainerRef.current,
-			height,
-			hideScrollbar: true,
-			waveColor: primaryFillColor,
-			progressColor: fontColor,
-			cursorColor: fontColor,
-			dragToSeek: true,
-			cursorWidth: 0,
-			barHeight: 0.8,
-			media: audioEngine.audioEl,
-			peaks: peaks,
-			duration: duration,
-		});
-		waveSurferRef.current = ws;
-		return ws;
-	}, [audioBuffer]);
+		workerRef.current.onmessage = (e) => {
+			if (e.data.type === "ANALYZE_DONE") {
+				setPcmDataReady(true);
+			}
+		};
+		return () => {
+			workerRef.current?.terminate();
+		};
+	}, [setPcmDataReady]);
 
 	useEffect(() => {
 		const container = wsContainerRef.current;
@@ -93,72 +69,91 @@ export const AudioSlider = () => {
 	}, []);
 
 	useEffect(() => {
-		if (audioBuffer && audioEngine.audioEl) {
-			destroyWaveSurfer();
-			setCurrentDuration((audioBuffer.duration * 1000) | 0);
-			createWaveSurfer();
+		if (
+			!audioFile ||
+			audioFile.size === 0 ||
+			!workerRef.current ||
+			!canvasRef.current ||
+			!wsContainerRef.current
+		) {
+			return;
 		}
-	}, [audioBuffer, createWaveSurfer, destroyWaveSurfer, setCurrentDuration]);
+
+		setPcmDataReady(false);
+
+		let canvasPayload: OffscreenCanvas | undefined;
+		let transfer: Transferable[] = [];
+
+		if (!offscreenTransferred.current) {
+			const offscreen = canvasRef.current.transferControlToOffscreen();
+			canvasPayload = offscreen;
+			transfer = [offscreen];
+			offscreenTransferred.current = true;
+		}
+		const styles = getComputedStyle(wsContainerRef.current);
+		const waveColor =
+			styles.getPropertyValue("--accent-a4").trim() || "#00ffa21e";
+		workerRef.current.postMessage(
+			{
+				type: "INIT",
+				payload: {
+					file: audioFile,
+					ffmpegWasmUrl,
+					canvas: canvasPayload,
+					width: wsContainerRef.current.clientWidth,
+					height: wsContainerRef.current.clientHeight,
+					dpr: window.devicePixelRatio || 1,
+					color: waveColor,
+				},
+			},
+			transfer,
+		);
+	}, [audioFile, setPcmDataReady]);
 
 	useEffect(() => {
-		const handleMusicUnload = () => {
-			destroyWaveSurfer();
-			if (playbackFrameRef.current) {
-				cancelAnimationFrame(playbackFrameRef.current);
-				playbackFrameRef.current = 0;
+		if (sliderWidthPx > 0 && workerRef.current && wsContainerRef.current) {
+			const timeoutId = setTimeout(() => {
+				if (!wsContainerRef.current || !workerRef.current) return;
+				const styles = getComputedStyle(wsContainerRef.current);
+				const waveColor =
+					styles.getPropertyValue("--accent-a4").trim() || "#00ffa21e";
+				workerRef.current.postMessage({
+					type: "RESIZE",
+					payload: {
+						width: sliderWidthPx,
+						height: wsContainerRef.current.clientHeight,
+						dpr: window.devicePixelRatio || 1,
+						color: waveColor,
+					},
+				});
+			}, 1000);
+			return () => clearTimeout(timeoutId);
+		}
+	}, [sliderWidthPx]);
+
+	useEffect(() => {
+		if (engineState === "idle" && workerRef.current && sliderWidthPx > 0) {
+			workerRef.current.postMessage({
+				type: "RESIZE",
+				payload: { width: 0, height: 0 },
+			});
+		}
+	}, [engineState, sliderWidthPx]);
+
+	useEffect(() => {
+		let rafId: number;
+		const renderCursor = () => {
+			if (currentDuration > 0 && cursorRef.current && sliderWidthPx > 0) {
+				const progress =
+					audioEngine.musicCurrentTime / (currentDuration / 1000);
+				const xPos = progress * sliderWidthPx;
+				cursorRef.current.style.transform = `translateX(${xPos}px)`;
 			}
-			setCurrentDuration(0);
-			setCurrentTime(0);
-			setAudioPlaying(false);
+			rafId = requestAnimationFrame(renderCursor);
 		};
-
-		const stopPlaybackFrame = () => {
-			if (playbackFrameRef.current) {
-				cancelAnimationFrame(playbackFrameRef.current);
-				playbackFrameRef.current = 0;
-			}
-		};
-
-		const onFrame = () => {
-			if (!audioEngine.musicPlaying) {
-				stopPlaybackFrame();
-				return;
-			}
-			setCurrentTime((audioEngine.musicCurrentTime * 1000) | 0);
-			playbackFrameRef.current = requestAnimationFrame(onFrame);
-		};
-
-		const handlePlay = () => {
-			if (playbackFrameRef.current) return;
-			onFrame();
-			setAudioPlaying(true);
-		};
-		const handlePause = () => {
-			stopPlaybackFrame();
-			setAudioPlaying(false);
-		};
-		const handleSeek = () =>
-			setCurrentTime((audioEngine.musicCurrentTime * 1000) | 0);
-
-		audioEngine.addEventListener("music-unload", handleMusicUnload);
-		audioEngine.addEventListener("music-resume", handlePlay);
-		audioEngine.addEventListener("music-pause", handlePause);
-		audioEngine.addEventListener("music-seeked", handleSeek);
-
-		return () => {
-			destroyWaveSurfer();
-			stopPlaybackFrame();
-			audioEngine.removeEventListener("music-unload", handleMusicUnload);
-			audioEngine.removeEventListener("music-resume", handlePlay);
-			audioEngine.removeEventListener("music-pause", handlePause);
-			audioEngine.removeEventListener("music-seeked", handleSeek);
-		};
-	}, [
-		destroyWaveSurfer,
-		setCurrentDuration,
-		setCurrentTime,
-		setAudioPlaying,
-	]);
+		rafId = requestAnimationFrame(renderCursor);
+		return () => cancelAnimationFrame(rafId);
+	}, [currentDuration, sliderWidthPx]);
 
 	const selectedRegions = useMemo(() => {
 		if (currentDuration <= 0 || sliderWidthPx <= 0) return [];
@@ -176,6 +171,16 @@ export const AudioSlider = () => {
 		return regions;
 	}, [lyricLines.lyricLines, selectedLines, currentDuration, sliderWidthPx]);
 
+	const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (currentDuration <= 0 || sliderWidthPx <= 0) return;
+		if (isDraggingRef.current) return;
+
+		const rect = e.currentTarget.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const progress = Math.max(0, Math.min(x / rect.width, 1));
+		audioEngine.seekMusic((progress * currentDuration) / 1000);
+	};
+
 	return (
 		<Card
 			style={{
@@ -189,10 +194,29 @@ export const AudioSlider = () => {
 				className={styles.waveformContainer}
 				aria-label="Audio Waveform"
 				ref={wsContainerRef}
-				style={{ width: "100%", height: "100%", overflow: "hidden" }}
+				style={{
+					width: "100%",
+					height: "100%",
+					overflow: "hidden",
+					position: "relative",
+					cursor: "text",
+				}}
 				onMouseMove={handleContainerMouseMove}
 				onMouseLeave={handleContainerMouseLeave}
+				onMouseDown={handleTimelineClick}
 			>
+				<canvas
+					ref={canvasRef}
+					style={{
+						position: "absolute",
+						top: 0,
+						left: 0,
+						width: "100%",
+						height: "100%",
+						pointerEvents: "none",
+					}}
+				/>
+
 				<HoverGuide hoverState={hoverState} />
 
 				{selectedRegions.map((region) => (
@@ -205,6 +229,23 @@ export const AudioSlider = () => {
 						}}
 					/>
 				))}
+
+				{currentDuration > 0 && (
+					<div
+						ref={cursorRef}
+						style={{
+							position: "absolute",
+							top: 0,
+							left: 0,
+							width: "1px",
+							height: "100%",
+							backgroundColor: "var(--accent-a11)",
+							pointerEvents: "none",
+							zIndex: 20,
+							willChange: "transform",
+						}}
+					/>
+				)}
 
 				<AudioRegion
 					sliderWidthPx={sliderWidthPx}

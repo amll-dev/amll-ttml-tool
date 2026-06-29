@@ -183,18 +183,18 @@ export const cmdSyncEnd = registerCommand(
 );
 
 export const cmdMoveFirstWordAndPlay = registerCommand(
-    "moveFirstWordAndPlay",
-    ["KeyHome"],
-    t("settingsDialog.keybindings.moveFirstWordAndPlay"),
-    "Sync",
-)
+	"moveFirstWordAndPlay",
+	["KeyHome"],
+	t("settingsDialog.keybindings.moveFirstWordAndPlay"),
+	"Sync",
+);
 
 export const cmdMoveLastWordAndPlay = registerCommand(
-    "moveLastWordAndPlay",
-    ["KeyEnd"],
-    t("settingsDialog.keybindings.moveLastWordAndPlay"),
-    "Sync",
-)
+	"moveLastWordAndPlay",
+	["KeyEnd"],
+	t("settingsDialog.keybindings.moveLastWordAndPlay"),
+	"Sync",
+);
 
 // =========================================================================================
 //  音频控制

@@ -15,15 +15,15 @@
 		"empty": {
 			"title": "没有歌词行",
 			"description": "在顶部面板中添加新歌词行或从菜单栏打开 / 导入已有歌词"
-		},
-		"useMetadataName": {
-			"title": "使用元数据命名？",
-			"description": "是否使用\"{name}\"作为文件名？"
 		}
 	},
 	"confirmDialog": {
 		"cancel": "取消",
 		"confirm": "确定",
+		"useMetadataName": {
+			"title": "使用元数据命名？",
+			"description": "是否使用\"{name}\"作为文件名？"
+		},
 		"newFile": {
 			"title": "确认新建文件",
 			"description": "当前文件有未保存的更改。如果继续，这些更改将会丢失。确定要新建文件吗？"
@@ -44,6 +44,7 @@
 	"ribbonBar": {
 		"editMode": {
 			"multipleValues": "多个值…",
+			"duration": "持续时间",
 			"showTranslation": "显示翻译行",
 			"showRomanization": "显示音译行",
 			"showWordRomanizationInput": "显示逐字音译",
@@ -83,6 +84,7 @@
 			"assistSettings": "辅助设置",
 			"showTimestampUpdate": "呈现时间戳更新",
 			"touchSyncPanel": "触控打轴辅助面板",
+			"bgLyricIgnoreSync": "背景歌词忽略打轴",
 			"displayOptions": "显示选项",
 			"showTimestamps": "显示时间戳",
 			"highlightActiveWord": "高亮当前音节",
@@ -101,17 +103,6 @@
 				"simple": "简单模式",
 				"advance": "高级模式"
 			},
-			"customBackground": "自定义背景",
-			"customBackgroundDesc": "选择一张图片作为背景。",
-			"customBackgroundPick": "选择图片",
-			"customBackgroundClear": "清除",
-			"customBackgroundManage": "设置",
-			"customBackgroundEnabled": "已设置背景",
-			"customBackgroundOpacity": "透明度",
-			"customBackgroundOpacityWarning": "如果这个数值太高可能让你看不清页面上的内容。",
-			"customBackgroundMask": "遮罩",
-			"customBackgroundBlur": "模糊半径",
-			"customBackgroundBrightness": "亮度",
 			"language": "界面语言",
 			"languageDesc": "选择界面显示的语言",
 			"layoutMode": "编辑布局模式",
@@ -119,6 +110,10 @@
 				"line1": "简单布局能够满足大部分使用者的基本需求",
 				"line2": "如果你需要更加高效的打轴的话，可以考虑切换到高级模式"
 			},
+			"defaultTtmlAuthorGithub": "默认 TTML 作者 GitHub ID",
+			"defaultTtmlAuthorGithubDesc": "当 ttmlAuthorGithub 为空时自动填入",
+			"defaultTtmlAuthorGithubLogin": "默认 TTML 作者用户名",
+			"defaultTtmlAuthorGithubLoginDesc": "当 ttmlAuthorGithubLogin 为空时自动填入",
 			"syncJudgeMode": "打轴时间戳判定模式",
 			"syncJudgeModeDesc": "设置打轴时间戳的判定模式，默认为\"首个按键按下时间\"。",
 			"syncJudgeModeOptions": {
@@ -143,7 +138,18 @@
 				"enable": "启用自动保存",
 				"interval": "保存间隔 (分钟)",
 				"limit": "保留快照数量"
-			}
+			},
+			"customBackgroundDesc": "选择一张图片作为背景。",
+			"customBackgroundPick": "选择图片",
+			"customBackgroundClear": "清除",
+			"customBackgroundOpacity": "透明度",
+			"customBackgroundOpacityWarning": "如果这个数值太高可能让你看不清页面上的内容。",
+			"customBackgroundMask": "遮罩",
+			"customBackgroundBlur": "模糊半径",
+			"customBackgroundBrightness": "亮度",
+			"customBackground": "自定义背景",
+			"customBackgroundEnabled": "已设置背景",
+			"customBackgroundManage": "设置"
 		},
 		"about": {
 			"update": "软件更新",
@@ -155,15 +161,24 @@
 		},
 		"group": {
 			"display": "显示",
+			"metadata": "元数据",
 			"timing": "打轴",
 			"playback": "播放",
 			"autosave": "自动保存"
 		},
 		"spectrogram": {
+			"customPaletteTitle": "自定义频谱图配色",
 			"palette": "配色方案",
 			"paletteCustom": "自定义",
 			"gradientEditorDesc": "Pos 0.0 对应最安静的部分，1.0 对应最响亮的部分。建议 Pos 越大，使用亮度越高的颜色。",
 			"addStop": "添加色标"
+		},
+		"personalization": {
+			"theme": "外观主题",
+			"themeDesc": "选择界面使用浅色、深色，或跟随系统设置。",
+			"themeLight": "浅色",
+			"themeDark": "深色",
+			"themeAuto": "自动"
 		}
 	},
 	"topBar": {
@@ -174,15 +189,6 @@
 		},
 		"appName": "Apple Music-like Lyrics TTML Tool",
 		"menu": {
-			"file": "文件",
-			"newLyric": "新建 TTML 文件",
-			"openLyric": "打开 TTML 文件",
-			"openFromClipboard": "从剪切板打开 TTML 文件",
-			"saveLyric": "保存 TTML 文件",
-			"restoreFromHistory": "从历史记录恢复…",
-			"saveLyricToClipboard": "保存 TTML 文件到剪切板",
-			"uploadToAMLLDB": "上传到 AMLL 歌词数据库",
-			"edit": "编辑",
 			"undo": "撤销",
 			"redo": "重做",
 			"selectAllLines": "选中所有歌词行",
@@ -191,7 +197,17 @@
 			"selectWordsOfMatchedSelection": "选择单词匹配项",
 			"timeShift": "平移时间...",
 			"editMetadata": "编辑歌词元数据",
-			"tool": "工具",
+			"edit": "编辑",
+			"newLyric": "新建 TTML 文件",
+			"openLyric": "打开 TTML 文件",
+			"openFromClipboard": "从剪切板打开 TTML 文件",
+			"saveLyric": "保存 TTML 文件",
+			"restoreFromHistory": "从历史记录恢复…",
+			"saveLyricToClipboard": "保存 TTML 文件到剪切板",
+			"uploadToAMLLDB": "上传到 AMLL 歌词数据库",
+			"file": "文件",
+			"helpDoc": "使用说明",
+			"help": "帮助",
 			"segmentationTools": "分词",
 			"autoSegment": "一键分词",
 			"rubySegment": "注音分词",
@@ -199,12 +215,11 @@
 			"syncLineTimestamps": "同步行时间戳",
 			"perWordRomanization": {
 				"index": "逐字音译",
-				"check": "检查逐字音译一致性",
 				"distribute": "自动分配罗马音...",
+				"check": "检查逐字音译一致性",
 				"autoRuby": "自动注音"
 			},
-			"help": "帮助",
-			"helpDoc": "使用说明",
+			"tool": "工具",
 			"importLyric": {
 				"import": "导入歌词",
 				"fromPlainText": "从纯文本导入…",
@@ -228,14 +243,7 @@
 	},
 	"header": {
 		"status": {
-			"saving": "正在保存...",
-			"pending": "正在保存...",
-			"savedAt": "已保存",
-			"saved": "已保存"
-		},
-		"popover": {
-			"filename": "文件名",
-			"versionHistory": "版本历史记录..."
+			"autoSavedAt": "已自动保存于 {time}"
 		}
 	},
 	"contextMenu": {
@@ -305,8 +313,6 @@
 			}
 		},
 		"tab": {
-			"common": "常规",
-			"keybindings": "按键绑定",
 			"spectrogram": "频谱图"
 		}
 	},
@@ -322,11 +328,6 @@
 		"expandSpectrogram": "展开 / 收起频谱图"
 	},
 	"audio": {
-		"status": {
-			"transcoding": "解码失败，正在尝试转码音频...",
-			"loading": "正在加载音频...",
-			"processing": "正在处理..."
-		},
 		"error": {
 			"workerError": "处理音频时出错"
 		}
@@ -346,8 +347,8 @@
 		},
 		"bpmInputLabel": "节拍 BPM",
 		"button": {
-			"start": "开始",
-			"stop": "结束"
+			"stop": "结束",
+			"start": "开始"
 		}
 	},
 	"lrclib": {
@@ -385,9 +386,11 @@
 		"deleteSuccess": "删除成功",
 		"time": "时间",
 		"restore": "恢复",
-		"about": "关于",
 		"remove": "移除",
 		"clickToSet": "点击设置"
+	},
+	"lyricEditor": {
+		"locate": "定位"
 	},
 	"lyricLineView": {
 		"translatedLabel": "翻译：",
@@ -491,6 +494,7 @@
 		"emptyBeatSymbol": "空拍符号"
 	},
 	"metadataDialog": {
+		"emptyItem": "此项尚未添加任何条目",
 		"openLink": "打开链接",
 		"duplicateMsg": "存在重复的元数据值",
 		"addValue": "添加",
@@ -517,12 +521,7 @@
 			"ttmlAuthorGithubLoginInvalidMsg": "GitHub 用户名应为不长于 39 字符的字母、数字或短横线"
 		},
 		"title": "元数据编辑器",
-		"key": "元数据类型",
-		"value": "值",
-		"empty": "无任何元数据",
-		"addKeyValue": "添加新键值",
 		"customKey": "自定义键名",
-		"addPresets": "一键添加所有预设键",
 		"clear": "清空",
 		"info": "了解详情"
 	},
@@ -622,6 +621,7 @@
 	},
 	"spectrogram": {
 		"invalidEndTime": "不能选择此结束时间",
+		"decoding": "正在解码音频，请稍候...",
 		"noAudioLoaded": "请先加载一个音频文件来渲染频谱图哦",
 		"loadAudio": "加载音频文件",
 		"showUnselectedLines": "显示未选中行"

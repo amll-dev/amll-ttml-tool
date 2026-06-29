@@ -41,7 +41,10 @@ const ToolMenuItems = () => {
 				</DropdownMenu.SubTrigger>
 				<DropdownMenu.SubContent>
 					<DropdownMenu.Item onSelect={menu.onOpenDistributeRomanization}>
-						{t("topBar.menu.perWordRomanization.distribute", "自动分配罗马音...")}
+						{t(
+							"topBar.menu.perWordRomanization.distribute",
+							"自动分配罗马音...",
+						)}
 					</DropdownMenu.Item>
 					<DropdownMenu.Item onSelect={menu.onCheckRomanizationWarnings}>
 						{t("topBar.menu.perWordRomanization.check", "检查")}

@@ -20,6 +20,10 @@
 	"confirmDialog": {
 		"cancel": "Cancel",
 		"confirm": "Confirm",
+		"useMetadataName": {
+			"title": "Use metadata name?",
+			"description": "Use \"{name}\" as the file name?"
+		},
 		"newFile": {
 			"title": "Confirm New File",
 			"description": "You have unsaved changes. If you proceed, these changes will be lost. Are you sure you want to create a new file?"
@@ -35,15 +39,12 @@
 		"importFile": {
 			"title": "Confirm Import Lyrics",
 			"description": "You have unsaved changes. If you proceed, these changes will be lost. Are you sure you want to import new lyrics?"
-		},
-		"useMetadataName": {
-			"title": "Use metadata name?",
-			"description": "Use \"{name}\" as the file name?"
 		}
 	},
 	"ribbonBar": {
 		"editMode": {
 			"multipleValues": "Multiple values…",
+			"duration": "持续时间",
 			"showTranslation": "Show Translation Line",
 			"showRomanization": "Show Romanization Line",
 			"showWordRomanizationInput": "Show Per-Word Romanization",
@@ -102,17 +103,6 @@
 				"simple": "Simple Mode",
 				"advance": "Advanced Mode"
 			},
-			"customBackground": "Custom Background",
-			"customBackgroundDesc": "Choose an image to use as the background.",
-			"customBackgroundPick": "Choose Image",
-			"customBackgroundClear": "Clear",
-			"customBackgroundManage": "Settings",
-			"customBackgroundEnabled": "Background set",
-			"customBackgroundOpacity": "Opacity",
-			"customBackgroundOpacityWarning": "If this value is too high, the page content may be hard to read.",
-			"customBackgroundMask": "Mask",
-			"customBackgroundBlur": "Blur Radius",
-			"customBackgroundBrightness": "Brightness",
 			"language": "Interface Language",
 			"languageDesc": "Select the language for the interface",
 			"layoutMode": "Editor Layout Mode",
@@ -120,6 +110,10 @@
 				"line1": "Simple layout satisfies most basic needs",
 				"line2": "Switch to Advanced Mode if you need more efficient syncing"
 			},
+			"defaultTtmlAuthorGithub": "Default TTML author's GitHub ID",
+			"defaultTtmlAuthorGithubDesc": "Automatically filled in if ttmlAuthorGithub is empty.",
+			"defaultTtmlAuthorGithubLogin": "Default TTML author username",
+			"defaultTtmlAuthorGithubLoginDesc": "Automatically filled in if ttmlAuthorGithubLogin is empty.",
 			"syncJudgeMode": "Sync Timestamp Judgment Mode",
 			"syncJudgeModeDesc": "Set how timestamps are judged when syncing. Default is 'First key down'.",
 			"syncJudgeModeOptions": {
@@ -144,7 +138,18 @@
 				"enable": "Enable Autosave",
 				"interval": "Save Interval (minutes)",
 				"limit": "Snapshots to keep"
-			}
+			},
+			"customBackgroundDesc": "Choose an image to use as the background.",
+			"customBackgroundPick": "Choose Image",
+			"customBackgroundClear": "Clear",
+			"customBackgroundOpacity": "Opacity",
+			"customBackgroundOpacityWarning": "If this value is too high, the page content may be hard to read.",
+			"customBackgroundMask": "Mask",
+			"customBackgroundBlur": "Blur Radius",
+			"customBackgroundBrightness": "Brightness",
+			"customBackground": "Custom Background",
+			"customBackgroundEnabled": "Background set",
+			"customBackgroundManage": "Settings"
 		},
 		"about": {
 			"update": "Update",
@@ -156,15 +161,24 @@
 		},
 		"group": {
 			"display": "Display",
+			"metadata": "Metadata",
 			"timing": "Timing",
 			"playback": "Playback",
 			"autosave": "Autosave"
 		},
 		"spectrogram": {
+			"customPaletteTitle": "Custom spectrogram color scheme",
 			"palette": "Color Palette",
 			"paletteCustom": "Custom",
 			"gradientEditorDesc": "A Pos value of 0.0 corresponds to the quietest part, and 1.0 corresponds to the loudest part. It is recommended to use brighter colors for larger Pos values.",
 			"addStop": "Add Color Stop"
+		},
+		"personalization": {
+			"theme": "Appearance theme",
+			"themeDesc": "Choose from using light, dark, or follow system settings.",
+			"themeLight": "Light",
+			"themeDark": "Dark",
+			"themeAuto": "Auto"
 		}
 	},
 	"topBar": {
@@ -175,15 +189,6 @@
 		},
 		"appName": "Apple Music-like Lyrics TTML Tool",
 		"menu": {
-			"file": "File",
-			"newLyric": "New lyrics",
-			"openLyric": "Open lyrics",
-			"openFromClipboard": "Open TTML from clipboard",
-			"saveLyric": "Save lyrics",
-			"restoreFromHistory": "Restore from history…",
-			"saveLyricToClipboard": "Save TTML to clipboard",
-			"uploadToAMLLDB": "Upload to database (CN only)",
-			"edit": "Edit",
 			"undo": "Undo",
 			"redo": "Redo",
 			"selectAllLines": "Select all lines",
@@ -192,7 +197,17 @@
 			"selectWordsOfMatchedSelection": "Select words matching selection",
 			"timeShift": "Time Shift...",
 			"editMetadata": "Edit lyrics metadata…",
-			"tool": "Tools",
+			"edit": "Edit",
+			"newLyric": "New lyrics",
+			"openLyric": "Open lyrics",
+			"openFromClipboard": "Open TTML from clipboard",
+			"saveLyric": "Save lyrics",
+			"restoreFromHistory": "Restore from history…",
+			"saveLyricToClipboard": "Save TTML to clipboard",
+			"uploadToAMLLDB": "Upload to database (CN only)",
+			"file": "File",
+			"helpDoc": "Documentation (CN)",
+			"help": "Help",
 			"segmentationTools": "Segmentation Tools",
 			"autoSegment": "Auto Segment",
 			"rubySegment": "Ruby Segmentation",
@@ -200,12 +215,11 @@
 			"syncLineTimestamps": "Sync Line Timestamps",
 			"perWordRomanization": {
 				"index": "Per-Word Romanization",
-				"check": "Check Per-Word Romanization",
 				"distribute": "Distribute Romanization...",
+				"check": "Check Per-Word Romanization",
 				"autoRuby": "Auto Ruby"
 			},
-			"help": "Help",
-			"helpDoc": "Documentation (CN)",
+			"tool": "Tools",
 			"importLyric": {
 				"import": "Import lyrics",
 				"fromPlainText": "Import from plain text…",
@@ -229,15 +243,7 @@
 	},
 	"header": {
 		"status": {
-			"saving": "Saving...",
-			"pending": "Saving...",
-			"savedAt": "Last saved at",
-			"saved": "Saved",
 			"autoSavedAt": "Autosaved at {time}"
-		},
-		"popover": {
-			"filename": "File Name",
-			"versionHistory": "Version History..."
 		}
 	},
 	"contextMenu": {
@@ -307,8 +313,6 @@
 			}
 		},
 		"tab": {
-			"common": "General",
-			"keybindings": "Keybindings",
 			"spectrogram": "Spectrogram"
 		}
 	},
@@ -324,11 +328,6 @@
 		"expandSpectrogram": "Expand / collapse spectrogram"
 	},
 	"audio": {
-		"status": {
-			"transcoding": "Decoding failed, attempting to transcode audio...",
-			"loading": "Loading audio...",
-			"processing": "Processing..."
-		},
 		"error": {
 			"workerError": "Error processing audio"
 		}
@@ -348,8 +347,8 @@
 		},
 		"bpmInputLabel": "Tempo (BPM)",
 		"button": {
-			"start": "Start",
-			"stop": "Stop"
+			"stop": "Stop",
+			"start": "Start"
 		}
 	},
 	"lrclib": {
@@ -387,9 +386,11 @@
 		"deleteSuccess": "Delete Success",
 		"time": "Time",
 		"restore": "Restore",
-		"about": "About",
 		"remove": "Remove",
 		"clickToSet": "Click to set "
+	},
+	"lyricEditor": {
+		"locate": "locate"
 	},
 	"lyricLineView": {
 		"translatedLabel": "Translation:",
@@ -493,6 +494,7 @@
 		"emptyBeatSymbol": "Empty Beat Symbol"
 	},
 	"metadataDialog": {
+		"emptyItem": "No entries have been added to this section yet.",
 		"openLink": "Open link",
 		"duplicateMsg": "Found duplicate metadata values",
 		"addValue": "Add",
@@ -519,12 +521,7 @@
 			"ttmlAuthorGithubLoginInvalidMsg": "GitHub username should be alphanumeric or hyphens, up to 39 characters"
 		},
 		"title": "Metadata Editor",
-		"key": "Key",
-		"value": "Value",
-		"empty": "No metadata",
-		"addKeyValue": "Add new key-value",
 		"customKey": "Custom Key",
-		"addPresets": "Add all preset keys",
 		"clear": "Clear",
 		"info": "Learn more"
 	},
@@ -624,6 +621,7 @@
 	},
 	"spectrogram": {
 		"invalidEndTime": "Cannot select this end time",
+		"decoding": "Decoding audio, please wait...",
 		"noAudioLoaded": "Please load an audio file to render the spectrogram",
 		"loadAudio": "Load an audio file",
 		"showUnselectedLines": "Show unselected lines"

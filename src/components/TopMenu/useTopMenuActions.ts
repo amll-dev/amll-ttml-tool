@@ -48,11 +48,7 @@ import {
 	undoableLyricLinesAtom,
 	undoLyricLinesAtom,
 } from "$/states/main.ts";
-import {
-	type LyricWord,
-	type LyricWordBase,
-	newLyricWord,
-} from "$/types/ttml";
+import { type LyricWord, type LyricWordBase, newLyricWord } from "$/types/ttml";
 import { error, log } from "$/utils/logging.ts";
 
 export const useTopMenuActions = () => {

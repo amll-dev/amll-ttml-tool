@@ -34,6 +34,7 @@ import { useFileOpener } from "$/hooks/useFileOpener";
 import { audioEngine } from "$/modules/audio/audio-engine";
 import { AudioSlider } from "$/modules/audio/components/AudioSlider";
 import {
+	audioEngineStateAtom,
 	audioPlayingAtom,
 	currentDurationAtom,
 	currentTimeAtom,
@@ -60,7 +61,7 @@ const AudioPlaybackKeyBinding = memo(() => {
 
 	useKeyBindingAtom(keyPlayPauseAtom, () => {
 		if (audioEngine.musicPlaying) audioEngine.pauseMusic();
-		else audioEngine.resumeOrSeekMusic();
+		else audioEngine.resumeMusic();
 	}, []);
 
 	useKeyBindingAtom(keySeekForwardAtom, () => {
@@ -97,15 +98,20 @@ const AudioPlaybackKeyBinding = memo(() => {
 });
 
 export const AudioControls: FC = memo(() => {
-	const [audioLoaded, setAudioLoaded] = useState(false);
 	const [spectrogramVisible, setSpectrogramVisible] = useState(false);
 	const currentTime = useAtomValue(currentTimeAtom);
 	const currentDuration = useAtomValue(currentDurationAtom);
-	const [audioPlaying, setAudioPlaying] = useAtom(audioPlayingAtom);
+	const engineState = useAtomValue(audioEngineStateAtom);
+	const [audioPlaying, _setAudioPlaying] = useAtom(audioPlayingAtom);
 	const [volume, setVolume] = useAtom(volumeAtom);
 	const [playbackRate, setPlaybackRate] = useAtom(playbackRateAtom);
 	const { openFile } = useFileOpener();
 	const { t } = useTranslation();
+
+	const audioLoaded =
+		engineState === "ready" ||
+		engineState === "playing" ||
+		engineState === "paused";
 
 	const onLoadMusic = useCallback(() => {
 		const inputEl = document.createElement("input");
@@ -129,45 +135,21 @@ export const AudioControls: FC = memo(() => {
 		if (audioEngine.musicPlaying) {
 			audioEngine.pauseMusic();
 		} else {
-			audioEngine.resumeOrSeekMusic();
+			audioEngine.resumeMusic();
 		}
 	}, []);
 
 	useEffect(() => {
-		const onMusicLoad = () => {
-			setAudioLoaded(true);
-			setAudioPlaying(false);
-		};
-		const onMusicUnload = () => {
-			setAudioLoaded(false);
-			setAudioPlaying(false);
-		};
-		const onMusicPause = () => {
-			setAudioPlaying(false);
-		};
-		const onMusicResume = () => {
-			setAudioPlaying(true);
-		};
-		const onVolumeChange = () => {
-			setVolume(audioEngine.volume);
-		};
-		setAudioLoaded(audioEngine.musicLoaded);
-		setAudioPlaying(audioEngine.musicPlaying);
 		setVolume(audioEngine.volume);
 		setPlaybackRate(audioEngine.musicPlayBackRate);
-		audioEngine.addEventListener("music-load", onMusicLoad);
-		audioEngine.addEventListener("music-unload", onMusicUnload);
-		audioEngine.addEventListener("music-pause", onMusicPause);
-		audioEngine.addEventListener("music-resume", onMusicResume);
+
+		const onVolumeChange = () => setVolume(audioEngine.volume);
 		audioEngine.addEventListener("volume-change", onVolumeChange);
+
 		return () => {
-			audioEngine.removeEventListener("music-load", onMusicLoad);
-			audioEngine.removeEventListener("music-unload", onMusicUnload);
-			audioEngine.removeEventListener("music-pause", onMusicPause);
-			audioEngine.removeEventListener("music-resume", onMusicResume);
 			audioEngine.removeEventListener("volume-change", onVolumeChange);
 		};
-	}, [setAudioPlaying, setVolume, setPlaybackRate]);
+	}, [setVolume, setPlaybackRate]);
 
 	useEffect(() => {
 		audioEngine.volume = volume;
@@ -189,7 +171,12 @@ export const AudioControls: FC = memo(() => {
 					<Flex align="center" px="2" gapX="2">
 						<HoverCard.Root>
 							<HoverCard.Trigger>
-								<IconButton my="2" variant="soft" onClick={onLoadMusic}>
+								<IconButton
+									my="2"
+									variant="soft"
+									onClick={onLoadMusic}
+									disabled={engineState === "loading"}
+								>
 									<MusicNote2Filled />
 								</IconButton>
 							</HoverCard.Trigger>

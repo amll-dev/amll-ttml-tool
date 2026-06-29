@@ -30,7 +30,7 @@ import {
 	keyMovePrevLineAtom,
 	keyMovePrevWordAndPlayAtom,
 	keyMovePrevWordAtom,
-    keyMoveLastWordAndPlayAtom,
+	keyMoveLastWordAndPlayAtom,
 	keyMoveFirstWordAndPlayAtom,
 	keySyncEndAtom,
 	keySyncNextAtom,
@@ -142,8 +142,7 @@ export const SyncKeyBinding: FC = () => {
 			store.set(selectedWordsAtom, new Set([nextWord.unit.id]));
 			store.set(selectedLinesAtom, new Set([nextWord.line.id]));
 			store.set(currentEmptyBeatAtom, 0);
-			if (play)
-				audioEngine.seekMusic(getUnitStartTime(nextWord.unit) / 1000);
+			if (play) audioEngine.seekMusic(getUnitStartTime(nextWord.unit) / 1000);
 			return true;
 		},
 		[store],
@@ -180,16 +179,14 @@ export const SyncKeyBinding: FC = () => {
 					store.set(selectedWordsAtom, new Set());
 				} else {
 					store.set(selectedWordsAtom, new Set([lastUnit.id]));
-					if (play)
-						audioEngine.seekMusic(getUnitStartTime(lastUnit) / 1000);
+					if (play) audioEngine.seekMusic(getUnitStartTime(lastUnit) / 1000);
 				}
 			} else {
 				const lineUnits = getSynchronizableUnits(location.line);
 				const prevUnit = lineUnits[location.syncIndex - 1];
 				if (!prevUnit) return false;
 				store.set(selectedWordsAtom, new Set([prevUnit.id]));
-				if (play)
-					audioEngine.seekMusic(getUnitStartTime(prevUnit) / 1000);
+				if (play) audioEngine.seekMusic(getUnitStartTime(prevUnit) / 1000);
 			}
 			return true;
 		},

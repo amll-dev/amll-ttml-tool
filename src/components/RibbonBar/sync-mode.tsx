@@ -147,10 +147,7 @@ export const SyncModeRibbonBar: FC = forwardRef<HTMLDivElement>(
 							onCheckedChange={(v) => setShowTouchSyncPanel(!!v)}
 						/>
 						<Text wrap="nowrap" size="1">
-							{t(
-								"ribbonBar.syncMode.bgLyricIgnoreSync",
-								"背景歌词忽略打轴",
-							)}
+							{t("ribbonBar.syncMode.bgLyricIgnoreSync", "背景歌词忽略打轴")}
 						</Text>
 						<Checkbox
 							checked={bgLyricIgnoreSync}

@@ -1,14 +1,14 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useRef } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
-import { audioBufferAtom, currentTimeAtom } from "$/modules/audio/states";
+import { currentDurationAtom, currentTimeAtom } from "$/modules/audio/states";
 
 export function useScrubbing(
 	scrollContainerRef: React.RefObject<HTMLDivElement | null>,
 	scrollLeft: number,
 	zoom: number,
 ) {
-	const audioBuffer = useAtomValue(audioBufferAtom);
+	const currentDurationMs = useAtomValue(currentDurationAtom);
 	const setCurrentTime = useSetAtom(currentTimeAtom);
 	const isScrubbingRef = useRef(false);
 	const scrollLeftForScrubRef = useRef(scrollLeft);
@@ -16,7 +16,7 @@ export function useScrubbing(
 
 	const handleScrubMove = useCallback(
 		(event: MouseEvent) => {
-			if (!scrollContainerRef.current || !audioBuffer) return;
+			if (!scrollContainerRef.current || !currentDurationMs) return;
 
 			const rect = scrollContainerRef.current.getBoundingClientRect();
 			const mouseX = event.clientX - rect.left;
@@ -27,15 +27,13 @@ export function useScrubbing(
 			const timeAtCursor =
 				(scrollLeftForScrubRef.current + clampedMouseX) / zoom;
 
-			const clampedTime = Math.max(
-				0,
-				Math.min(timeAtCursor, audioBuffer.duration),
-			);
+			const durationSec = currentDurationMs / 1000;
+			const clampedTime = Math.max(0, Math.min(timeAtCursor, durationSec));
 
 			audioEngine.seekMusic(clampedTime);
 			setCurrentTime(clampedTime * 1000);
 		},
-		[audioBuffer, zoom, setCurrentTime, scrollContainerRef],
+		[currentDurationMs, zoom, setCurrentTime, scrollContainerRef],
 	);
 
 	const handleScrubEnd = useCallback(() => {

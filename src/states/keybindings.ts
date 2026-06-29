@@ -28,7 +28,7 @@ import {
 	cmdSwitchEditMode,
 	cmdSwitchPreviewMode,
 	cmdSwitchSyncMode,
-    cmdMoveLastWordAndPlay,
+	cmdMoveLastWordAndPlay,
 	cmdMoveFirstWordAndPlay,
 	cmdSyncEnd,
 	cmdSyncNext,

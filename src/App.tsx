@@ -132,7 +132,9 @@ function App() {
 	const customBackgroundOpacity = useAtomValue(customBackgroundOpacityAtom);
 	const customBackgroundMask = useAtomValue(customBackgroundMaskAtom);
 	const customBackgroundBlur = useAtomValue(customBackgroundBlurAtom);
-	const customBackgroundBrightness = useAtomValue(customBackgroundBrightnessAtom);
+	const customBackgroundBrightness = useAtomValue(
+		customBackgroundBrightnessAtom,
+	);
 	const [hasBackground, setHasBackground] = useState(false);
 	const effectiveTheme = isDarkTheme ? "dark" : "light";
 	const { checkUpdate, status, update } = useAppUpdate();

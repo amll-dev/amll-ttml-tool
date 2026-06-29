@@ -8,7 +8,8 @@
 			"!**/build",
 			"!**/target",
 			"!**/vendor",
-			"!!**/decode-audio.js"
+			"!!**/decode-audio.js",
+			"!!**/wasm"
 		]
 	},
 	"formatter": {

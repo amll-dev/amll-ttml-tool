@@ -470,33 +470,33 @@ export function adjustLineEndTime(line: Draft<LyricLine>, newEndTime: number) {
 
 		const processedLine = processSingleLine(line);
 
-	type RubyWord = NonNullable<LyricWord["ruby"]>[number];
+		type RubyWord = NonNullable<LyricWord["ruby"]>[number];
 		interface CompressTarget {
 			duration: number;
-		ref?: Draft<LyricWord | RubyWord>;
+			ref?: Draft<LyricWord | RubyWord>;
 		}
 
 		const wordDraftMap = new Map<string, Draft<LyricWord>>();
-	const rubyDraftMap = new Map<string, Map<number, Draft<RubyWord>>>();
+		const rubyDraftMap = new Map<string, Map<number, Draft<RubyWord>>>();
 		for (const w of line.words) {
 			wordDraftMap.set(w.id, w);
-		if (w.ruby && w.ruby.length > 0) {
-			const rubyMap = new Map<number, Draft<RubyWord>>();
-			w.ruby.forEach((rubyWord, index) => {
-				rubyMap.set(index, rubyWord);
-			});
-			rubyDraftMap.set(w.id, rubyMap);
-		}
+			if (w.ruby && w.ruby.length > 0) {
+				const rubyMap = new Map<number, Draft<RubyWord>>();
+				w.ruby.forEach((rubyWord, index) => {
+					rubyMap.set(index, rubyWord);
+				});
+				rubyDraftMap.set(w.id, rubyMap);
+			}
 		}
 
 		const targets: CompressTarget[] = processedLine.segments.map((seg) => ({
 			duration: seg.endTime - seg.startTime,
-		ref:
-			seg.type === "word"
-				? seg.isRuby && seg.parentId && typeof seg.rubyIndex === "number"
-					? rubyDraftMap.get(seg.parentId)?.get(seg.rubyIndex)
-					: wordDraftMap.get(seg.id)
-				: undefined,
+			ref:
+				seg.type === "word"
+					? seg.isRuby && seg.parentId && typeof seg.rubyIndex === "number"
+						? rubyDraftMap.get(seg.parentId)?.get(seg.rubyIndex)
+						: wordDraftMap.get(seg.id)
+					: undefined,
 		}));
 
 		let remainingReduction = diff;
@@ -537,20 +537,20 @@ export function adjustLineEndTime(line: Draft<LyricLine>, newEndTime: number) {
 			}
 			writeCursor += target.duration;
 		}
-	for (const word of line.words) {
-		if (word.ruby && word.ruby.length > 0) {
-			const validRuby = word.ruby.filter(
-				(rubyWord) => rubyWord.endTime > rubyWord.startTime,
-			);
-			if (validRuby.length > 0) {
-				word.startTime = Math.min(
-					...validRuby.map((rubyWord) => rubyWord.startTime),
+		for (const word of line.words) {
+			if (word.ruby && word.ruby.length > 0) {
+				const validRuby = word.ruby.filter(
+					(rubyWord) => rubyWord.endTime > rubyWord.startTime,
 				);
-				word.endTime = Math.max(
-					...validRuby.map((rubyWord) => rubyWord.endTime),
-				);
+				if (validRuby.length > 0) {
+					word.startTime = Math.min(
+						...validRuby.map((rubyWord) => rubyWord.startTime),
+					);
+					word.endTime = Math.max(
+						...validRuby.map((rubyWord) => rubyWord.endTime),
+					);
+				}
 			}
 		}
-	}
 	}
 }

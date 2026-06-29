@@ -129,8 +129,9 @@ const LyricLineScroller = ({
 	const scrollToIndex = useAtomValue(scrollToIndexAtom);
 
 	useEffect(() => {
-		const targetIndex =
-			!Number.isNaN(scrollToIndex) ? scrollToIndex : editingRomanWordIndex;
+		const targetIndex = !Number.isNaN(scrollToIndex)
+			? scrollToIndex
+			: editingRomanWordIndex;
 		if (targetIndex === null || Number.isNaN(targetIndex)) return;
 		// console.log({ scrollToIndex, wordsContainer });
 		if (!wordsContainer) return;
@@ -458,13 +459,7 @@ export const LyricLineView: FC<{
 			});
 			setEndTimeLinked(true);
 		},
-		[
-			editLyricLines,
-			endTimeLinked,
-			line.endTime,
-			lineIndex,
-			lyricLines,
-		],
+		[editLyricLines, endTimeLinked, line.endTime, lineIndex, lyricLines],
 	);
 
 	return (
@@ -815,30 +810,27 @@ export const LyricLineView: FC<{
 									<div className={styles.startTime} ref={startTimeRef}>
 										{msToTimestamp(line.startTime)}
 									</div>
-										<button
-											type="button"
-											className={classNames(
-												styles.endTime,
-												styles.endTimeButton,
-											)}
-											ref={endTimeRef}
-											onClick={onToggleEndTimeLink}
+									<button
+										type="button"
+										className={classNames(styles.endTime, styles.endTimeButton)}
+										ref={endTimeRef}
+										onClick={onToggleEndTimeLink}
+									>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+											}}
 										>
-											<span
-												style={{
-													display: "inline-flex",
-													alignItems: "center",
-												}}
-											>
-												{endTimeLinked ? (
-													<LinkMultiple20Regular />
-												) : showEndTimeAsDuration ? (
-													`+${line.endTime - line.startTime}ms`
-												) : (
-													msToTimestamp(line.endTime)
-												)}
-											</span>
-										</button>
+											{endTimeLinked ? (
+												<LinkMultiple20Regular />
+											) : showEndTimeAsDuration ? (
+												`+${line.endTime - line.startTime}ms`
+											) : (
+												msToTimestamp(line.endTime)
+											)}
+										</span>
+									</button>
 								</Flex>
 							)}
 						</div>

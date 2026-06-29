@@ -27,27 +27,27 @@ export function processSingleLine(line: LyricLine): ProcessedLyricLine {
 
 	const rawWordSegments: WordSegment[] = line.words.flatMap(
 		(word): WordSegment[] => {
-		if (word.ruby && word.ruby.length > 0) {
-			return word.ruby.map((rubyWord, index) => ({
-				type: "word" as const,
-				id: `${word.id}-ruby-${index}`,
-				word: rubyWord.word,
-				startTime: rubyWord.startTime,
-				endTime: rubyWord.endTime,
-				obscene: word.obscene,
-				emptyBeat: word.emptyBeat,
-				romanWord: "",
-				isRuby: true,
-				parentId: word.id,
-				rubyIndex: index,
-			}));
-		}
-		return [
-			{
-				...word,
-				type: "word" as const,
-			},
-		];
+			if (word.ruby && word.ruby.length > 0) {
+				return word.ruby.map((rubyWord, index) => ({
+					type: "word" as const,
+					id: `${word.id}-ruby-${index}`,
+					word: rubyWord.word,
+					startTime: rubyWord.startTime,
+					endTime: rubyWord.endTime,
+					obscene: word.obscene,
+					emptyBeat: word.emptyBeat,
+					romanWord: "",
+					isRuby: true,
+					parentId: word.id,
+					rubyIndex: index,
+				}));
+			}
+			return [
+				{
+					...word,
+					type: "word" as const,
+				},
+			];
 		},
 	);
 

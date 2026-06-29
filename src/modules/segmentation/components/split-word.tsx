@@ -116,7 +116,6 @@ export const SplitWordDialog = memo(() => {
 			return;
 		}
 
-
 		const line = lyricLines.lyricLines[editingState.lineIndex];
 		const word = line?.words[editingState.wordIndex];
 
