@@ -91,7 +91,7 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 		if (!this.audioController) return 0;
 		return (
 			this.baseTime +
-			this.audioController.getReadIndex() / this.renderer.sampleRate
+			this.audioController.getPlaybackIndex() / this.renderer.sampleRate
 		);
 	}
 

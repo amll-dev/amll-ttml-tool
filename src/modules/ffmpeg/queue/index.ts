@@ -5,6 +5,7 @@ const STATE_PLAYING = 0;
 const STATE_IS_SEEKING = 1;
 const STATE_READ_INDEX = 2;
 const STATE_WRITE_INDEX = 3;
+const STATE_PLAYBACK_INDEX = 4;
 
 const RING_BUFFER_CAPACITY = 192000 * 2;
 const RING_BUFFER_BYTES_PER_CHANNEL = RING_BUFFER_CAPACITY * 4;
@@ -23,6 +24,7 @@ export interface MainAudioController {
 	 * Returns the absolute number of frames consumed by the reader so far.
 	 */
 	getReadIndex(): number;
+	getPlaybackIndex(): number;
 	setSeeking(isSeeking: boolean): void;
 }
 
@@ -112,6 +114,7 @@ export interface AudioReader {
 	 * @returns The actual number of frames successfully read.
 	 */
 	readPartial(outputs: Float32Array[], length: number): number;
+	addPlaybackIndex(frames: number): void;
 }
 //#endregion
 
@@ -144,6 +147,10 @@ class AudioQueueCore implements MainAudioController, AudioWriter, AudioReader {
 
 	getReadIndex(): number {
 		return Atomics.load(this.controlBlock, STATE_READ_INDEX);
+	}
+
+	getPlaybackIndex(): number {
+		return Atomics.load(this.controlBlock, STATE_PLAYBACK_INDEX);
 	}
 
 	setSeeking(isSeeking: boolean): void {
@@ -199,6 +206,7 @@ class AudioQueueCore implements MainAudioController, AudioWriter, AudioReader {
 		Atomics.store(this.controlBlock, STATE_IS_SEEKING, 1);
 		Atomics.store(this.controlBlock, STATE_WRITE_INDEX, 0);
 		Atomics.store(this.controlBlock, STATE_READ_INDEX, 0);
+		Atomics.store(this.controlBlock, STATE_PLAYBACK_INDEX, 0);
 		Atomics.notify(this.controlBlock, STATE_READ_INDEX, 1);
 	}
 
@@ -344,6 +352,10 @@ class AudioQueueCore implements MainAudioController, AudioWriter, AudioReader {
 		Atomics.add(this.controlBlock, STATE_READ_INDEX, readAmount);
 		Atomics.notify(this.controlBlock, STATE_READ_INDEX, 1);
 		return readAmount;
+	}
+
+	addPlaybackIndex(frames: number): void {
+		Atomics.add(this.controlBlock, STATE_PLAYBACK_INDEX, frames);
 	}
 	//#endregion
 

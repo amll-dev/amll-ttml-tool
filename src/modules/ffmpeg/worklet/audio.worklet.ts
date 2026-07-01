@@ -9,7 +9,11 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 	private audioReader: AudioReader | null = null;
 	private stProcessor: SoundTouchProcessor | null = null;
 	private wasmMemory: WebAssembly.Memory | null = null;
+
 	private channels: number = 2;
+	private currentTempo: number = 1.0;
+	private currentRate: number = 1.0;
+	private playbackFractional: number = 0.0;
 
 	private wasSeeking: boolean = false;
 
@@ -34,10 +38,12 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 				});
 			} else if (type === "SET_TEMPO" && this.stProcessor) {
 				this.stProcessor.setTempo(payload.tempo);
+				this.currentTempo = payload.tempo;
 			} else if (type === "SET_PITCH" && this.stProcessor) {
 				this.stProcessor.setPitch(payload.pitch);
 			} else if (type === "SET_RATE" && this.stProcessor) {
 				this.stProcessor.setRate(payload.rate);
+				this.currentRate = payload.rate;
 			} else if (type === "DESTROY") {
 				if (this.stProcessor) {
 					this.stProcessor.free();
@@ -69,6 +75,7 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 		const isCurrentlySeeking = this.audioReader.isSeeking();
 		if (this.wasSeeking && !isCurrentlySeeking) {
 			this.stProcessor.clear();
+			this.playbackFractional = 0.0;
 		}
 		this.wasSeeking = isCurrentlySeeking;
 
@@ -118,6 +125,17 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 					extracted,
 				);
 				output[c].set(wasmOutput);
+			}
+
+			const consumedSourceFrames =
+				extracted * this.currentTempo * this.currentRate;
+			const totalToAccumulate = consumedSourceFrames + this.playbackFractional;
+
+			const integerPart = Math.floor(totalToAccumulate);
+			this.playbackFractional = totalToAccumulate - integerPart;
+
+			if (integerPart > 0) {
+				this.audioReader.addPlaybackIndex(integerPart);
 			}
 		}
 
