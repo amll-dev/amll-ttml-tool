@@ -16,7 +16,7 @@ import classNames from "classnames";
 import { useAtomValue } from "jotai";
 import { memo, useEffect, useMemo, useRef } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
-import { audioPlayingAtom, currentTimeAtom } from "$/modules/audio/states";
+import { audioPlayingAtom } from "$/modules/audio/states";
 import {
 	// hideObsceneWordsAtom,
 	lyricWordFadeWidthAtom,
@@ -28,7 +28,6 @@ import styles from "./index.module.css";
 
 export const AMLLWrapper = memo(() => {
 	const originalLyricLines = useAtomValue(lyricLinesAtom);
-	const currentTime = useAtomValue(currentTimeAtom);
 	const isPlaying = useAtomValue(audioPlayingAtom);
 	const darkMode = useAtomValue(isDarkThemeAtom);
 	const showTranslationLines = useAtomValue(showTranslationLinesAtom);
@@ -48,9 +47,15 @@ export const AMLLWrapper = memo(() => {
 	}, [originalLyricLines, showTranslationLines, showRomanLines]);
 
 	useEffect(() => {
-		setTimeout(() => {
-			playerRef.current?.lyricPlayer?.calcLayout(true);
-		}, 1500);
+		const updateAMLLTime = (timeInSeconds: number) => {
+			if (playerRef.current?.lyricPlayer) {
+				playerRef.current.lyricPlayer.setCurrentTime(timeInSeconds * 1000);
+			}
+		};
+
+		updateAMLLTime(audioEngine.musicCurrentTime);
+		audioEngine.onTimeUpdate(updateAMLLTime);
+		return () => audioEngine.offTimeUpdate(updateAMLLTime);
 	}, []);
 
 	return (
@@ -65,7 +70,6 @@ export const AMLLWrapper = memo(() => {
 					audioEngine.seekMusic(evt.line.getLine().startTime / 1000);
 				}}
 				lyricLines={lyricLines}
-				currentTime={currentTime}
 				playing={isPlaying}
 				// maskObsceneWordsMode={
 				// 	hideObsceneWords

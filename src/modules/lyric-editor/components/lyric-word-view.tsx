@@ -35,7 +35,7 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { currentTimeAtom } from "$/modules/audio/states/index.ts";
+import { audioEngine } from "$/modules/audio/audio-engine.ts";
 import {
 	displayRomanizationInSyncAtom,
 	highlightActiveWordAtom,
@@ -761,15 +761,6 @@ const LyricSyncWordView: FC<{
 		() => atom((get) => get(selectedWordsAtom).has(syncId)),
 		[syncId],
 	);
-	const isWordActiveAtom = useMemo(
-		() =>
-			atom((get) => {
-				const currentTime = get(currentTimeAtom);
-				return currentTime >= startTime && currentTime < endTime;
-			}),
-		[startTime, endTime],
-	);
-	const isWordActive = useAtomValue(isWordActiveAtom);
 	const isWordSelected = useAtomValue(isWordSelectedAtom);
 	const setSelectedWords = useSetImmerAtom(selectedWordsAtom);
 	const setSelectedLines = useSetImmerAtom(selectedLinesAtom);
@@ -782,6 +773,36 @@ const LyricSyncWordView: FC<{
 
 	const startTimeRef = useRef<HTMLDivElement>(null);
 	const endTimeRef = useRef<HTMLDivElement>(null);
+
+	const wordContainerRef = useRef<HTMLDivElement>(null);
+	const isActiveRef = useRef(false);
+
+	useEffect(() => {
+		const updateActiveState = (timeInSeconds: number) => {
+			if (!wordContainerRef.current) return;
+			if (!highlightActiveWord) {
+				if (isActiveRef.current) {
+					isActiveRef.current = false;
+					wordContainerRef.current.classList.remove(styles.active);
+				}
+				return;
+			}
+			const currentMs = timeInSeconds * 1000;
+			const isActive = currentMs >= startTime && currentMs < endTime;
+			if (isActive !== isActiveRef.current) {
+				isActiveRef.current = isActive;
+				if (isActive) {
+					wordContainerRef.current.classList.add(styles.active);
+				} else {
+					wordContainerRef.current.classList.remove(styles.active);
+				}
+			}
+		};
+
+		updateActiveState(audioEngine.musicCurrentTime);
+		audioEngine.onTimeUpdate(updateActiveState);
+		return () => audioEngine.offTimeUpdate(updateActiveState);
+	}, [startTime, endTime, highlightActiveWord]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: 用于呈现时间戳更新效果
 	useEffect(() => {
@@ -841,7 +862,6 @@ const LyricSyncWordView: FC<{
 				styles.sync,
 				isWordSelected && styles.selected,
 				isWordBlank && styles.blank,
-				isWordActive && highlightActiveWord && styles.active,
 				hasError &&
 					(toolMode === ToolMode.Edit ||
 						(toolMode === ToolMode.Sync &&
@@ -853,10 +873,8 @@ const LyricSyncWordView: FC<{
 		[
 			isWordBlank,
 			isWordSelected,
-			isWordActive,
 			hasError,
 			toolMode,
-			highlightActiveWord,
 			showTimestamps,
 			highlightErrors,
 			hasRadical,
@@ -865,6 +883,7 @@ const LyricSyncWordView: FC<{
 
 	return (
 		<div
+			ref={wordContainerRef}
 			className={className}
 			onClick={(evt) => {
 				evt.stopPropagation();

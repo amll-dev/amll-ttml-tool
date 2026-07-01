@@ -28,7 +28,7 @@ import {
 	Tooltip,
 } from "@radix-ui/themes";
 import { useAtom, useAtomValue, useStore } from "jotai";
-import { type FC, memo, useCallback, useEffect, useState } from "react";
+import { type FC, memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFileOpener } from "$/hooks/useFileOpener";
 import { audioEngine } from "$/modules/audio/audio-engine";
@@ -37,7 +37,6 @@ import {
 	audioEngineStateAtom,
 	audioPlayingAtom,
 	currentDurationAtom,
-	currentTimeAtom,
 	playbackRateAtom,
 	volumeAtom,
 } from "$/modules/audio/states";
@@ -97,9 +96,43 @@ const AudioPlaybackKeyBinding = memo(() => {
 	return null;
 });
 
+const CurrentTimeDisplay = memo(() => {
+	const timeRef = useRef<HTMLSpanElement>(null);
+	useEffect(() => {
+		let lastRenderedText = "";
+		const updateTime = (timeInSeconds: number) => {
+			if (!timeRef.current) return;
+			const text = msToTimestamp(timeInSeconds * 1000);
+
+			if (text !== lastRenderedText) {
+				timeRef.current.textContent = text;
+				lastRenderedText = text;
+			}
+		};
+
+		updateTime(audioEngine.musicCurrentTime);
+
+		audioEngine.onTimeUpdate(updateTime);
+		return () => audioEngine.offTimeUpdate(updateTime);
+	}, []);
+
+	return (
+		<Text
+			size="2"
+			ref={timeRef}
+			style={{
+				minWidth: "5.5em",
+				textAlign: "left",
+				fontVariantNumeric: "tabular-nums",
+			}}
+		>
+			00:00.000
+		</Text>
+	);
+});
+
 export const AudioControls: FC = memo(() => {
 	const [spectrogramVisible, setSpectrogramVisible] = useState(false);
-	const currentTime = useAtomValue(currentTimeAtom);
 	const currentDuration = useAtomValue(currentDurationAtom);
 	const engineState = useAtomValue(audioEngineStateAtom);
 	const [audioPlaying, _setAudioPlaying] = useAtom(audioPlayingAtom);
@@ -231,15 +264,7 @@ export const AudioControls: FC = memo(() => {
 								{audioPlaying ? <PauseFilled /> : <PlayFilled />}
 							</IconButton>
 						</Tooltip>
-						<Text
-							size="2"
-							style={{
-								minWidth: "5.5em",
-								textAlign: "left",
-							}}
-						>
-							{msToTimestamp(currentTime)}
-						</Text>
+						<CurrentTimeDisplay />
 						<AudioSlider />
 						<Text
 							size="2"

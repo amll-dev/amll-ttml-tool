@@ -1,7 +1,7 @@
-import { useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useRef } from "react";
+import { useAtomValue } from "jotai";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
-import { currentDurationAtom, currentTimeAtom } from "$/modules/audio/states";
+import { currentDurationAtom } from "$/modules/audio/states";
 
 export function useScrubbing(
 	scrollContainerRef: React.RefObject<HTMLDivElement | null>,
@@ -9,31 +9,43 @@ export function useScrubbing(
 	zoom: number,
 ) {
 	const currentDurationMs = useAtomValue(currentDurationAtom);
-	const setCurrentTime = useSetAtom(currentTimeAtom);
 	const isScrubbingRef = useRef(false);
-	const scrollLeftForScrubRef = useRef(scrollLeft);
-	const currentMouseXRef = useRef(0);
 
-	const handleScrubMove = useCallback(
-		(event: MouseEvent) => {
+	const scrollLeftRef = useRef(scrollLeft);
+	useLayoutEffect(() => {
+		scrollLeftRef.current = scrollLeft;
+	}, [scrollLeft]);
+
+	const clickOffsetPxRef = useRef(0);
+	const lastClientXRef = useRef(0);
+
+	const updateScrubPosition = useCallback(
+		(clientX: number) => {
 			if (!scrollContainerRef.current || !currentDurationMs) return;
 
 			const rect = scrollContainerRef.current.getBoundingClientRect();
-			const mouseX = event.clientX - rect.left;
-			currentMouseXRef.current = mouseX;
+			const mouseX = clientX - rect.left;
 
 			const clampedMouseX = Math.max(0, Math.min(mouseX, rect.width));
 
-			const timeAtCursor =
-				(scrollLeftForScrubRef.current + clampedMouseX) / zoom;
+			const virtualMouseX = scrollLeftRef.current + clampedMouseX;
+			const correctedVirtualX = virtualMouseX - clickOffsetPxRef.current;
+			const targetTime = correctedVirtualX / zoom;
 
 			const durationSec = currentDurationMs / 1000;
-			const clampedTime = Math.max(0, Math.min(timeAtCursor, durationSec));
+			const clampedTime = Math.max(0, Math.min(targetTime, durationSec));
 
 			audioEngine.seekMusic(clampedTime);
-			setCurrentTime(clampedTime * 1000);
 		},
-		[currentDurationMs, zoom, setCurrentTime, scrollContainerRef],
+		[currentDurationMs, zoom, scrollContainerRef],
+	);
+
+	const handleScrubMove = useCallback(
+		(event: MouseEvent) => {
+			lastClientXRef.current = event.clientX;
+			updateScrubPosition(event.clientX);
+		},
+		[updateScrubPosition],
 	);
 
 	const handleScrubEnd = useCallback(() => {
@@ -45,16 +57,33 @@ export function useScrubbing(
 	const handleScrubStart = useCallback(
 		(event: React.MouseEvent) => {
 			event.preventDefault();
-			isScrubbingRef.current = true;
-			scrollLeftForScrubRef.current = scrollLeft;
+			event.stopPropagation();
 
-			handleScrubMove(event.nativeEvent);
+			if (!scrollContainerRef.current) return;
+			isScrubbingRef.current = true;
+
+			lastClientXRef.current = event.clientX;
+
+			const rect = scrollContainerRef.current.getBoundingClientRect();
+			const mouseX = event.clientX - rect.left;
+
+			const virtualMouseX = scrollLeftRef.current + mouseX;
+			const playheadVirtualX = audioEngine.musicCurrentTime * zoom;
+
+			clickOffsetPxRef.current = virtualMouseX - playheadVirtualX;
 
 			window.addEventListener("mousemove", handleScrubMove);
 			window.addEventListener("mouseup", handleScrubEnd, { once: true });
 		},
-		[handleScrubMove, handleScrubEnd, scrollLeft],
+		[handleScrubMove, handleScrubEnd, zoom, scrollContainerRef],
 	);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: 用 scrollLeft 作为 Trigger 以避免将 scrollLeft 加入 useCallback 导致频繁解绑事件
+	useEffect(() => {
+		if (isScrubbingRef.current) {
+			updateScrubPosition(lastClientXRef.current);
+		}
+	}, [scrollLeft, updateScrubPosition]);
 
 	return { handleScrubStart };
 }

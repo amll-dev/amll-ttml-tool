@@ -27,9 +27,8 @@ import { useFileOpener } from "$/hooks/useFileOpener.ts";
 import { audioEngine } from "$/modules/audio/audio-engine.ts";
 import {
 	audioEngineStateAtom,
-	auditionTimeAtom,
 	currentDurationAtom,
-	currentTimeAtom,
+	isAuditioningAtom,
 	pcmDataReadyAtom,
 } from "$/modules/audio/states/index.ts";
 import { useScrubbing } from "$/modules/spectrogram/hooks/useScrubbing";
@@ -68,11 +67,12 @@ export const AudioSpectrogram: FC = () => {
 	const pcmDataReady = useAtomValue(pcmDataReadyAtom);
 	const currentDurationMs = useAtomValue(currentDurationAtom);
 	const engineState = useAtomValue(audioEngineStateAtom);
-	const currentTimeInMs = useAtomValue(currentTimeAtom);
-	const setCurrentTime = useSetAtom(currentTimeAtom);
-	const currentTime = currentTimeInMs / 1000;
-	const auditionTime = useAtomValue(auditionTimeAtom);
 	const selectedLines = useAtomValue(selectedLinesAtom);
+
+	const isAuditioning = useAtomValue(isAuditioningAtom);
+	const playheadCursorRef = useRef<HTMLDivElement>(null);
+	const playheadScrubHandleRef = useRef<HTMLDivElement>(null);
+	const auditionCursorRef = useRef<HTMLDivElement>(null);
 
 	const [gain, setGain] = useAtom(spectrogramGainAtom);
 	const [dataHeight, setDataHeight] = useAtom(spectrogramHeightAtom);
@@ -97,6 +97,47 @@ export const AudioSpectrogram: FC = () => {
 		containerWidth,
 		pcmDataReady,
 	);
+
+	const viewStateRef = useRef({ zoom, scrollLeft, containerWidth });
+
+	useLayoutEffect(() => {
+		viewStateRef.current = { zoom, scrollLeft, containerWidth };
+	}, [zoom, scrollLeft, containerWidth]);
+
+	const syncCursorsToDOM = useCallback((timeInSeconds: number) => {
+		const { zoom, scrollLeft, containerWidth } = viewStateRef.current;
+
+		const cursorPosition = timeInSeconds * zoom;
+		const handleLeftPosition = cursorPosition - scrollLeft;
+
+		if (playheadCursorRef.current) {
+			playheadCursorRef.current.style.left = `${cursorPosition}px`;
+		}
+
+		if (auditionCursorRef.current) {
+			auditionCursorRef.current.style.left = `${cursorPosition}px`;
+		}
+
+		if (playheadScrubHandleRef.current) {
+			playheadScrubHandleRef.current.style.left = `${handleLeftPosition}px`;
+			playheadScrubHandleRef.current.style.display =
+				handleLeftPosition < 0 || handleLeftPosition > containerWidth
+					? "none"
+					: "block";
+		}
+	}, []);
+
+	useEffect(() => {
+		syncCursorsToDOM(audioEngine.musicCurrentTime);
+		audioEngine.onTimeUpdate(syncCursorsToDOM);
+
+		return () => audioEngine.offTimeUpdate(syncCursorsToDOM);
+	}, [syncCursorsToDOM]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: 因为暂停时不发射进度，依赖视口状态作为 Trigger 强制同步游标
+	useEffect(() => {
+		syncCursorsToDOM(audioEngine.musicCurrentTime);
+	}, [zoom, scrollLeft, containerWidth, syncCursorsToDOM]);
 
 	const [isHovering, setIsHovering] = useState(false);
 	const hoverPx = useAtomValue(spectrogramHoverPxAtom);
@@ -232,7 +273,6 @@ export const AudioSpectrogram: FC = () => {
 
 	const handleRulerSeek = (timeInSeconds: number) => {
 		audioEngine.seekMusic(timeInSeconds);
-		setCurrentTime(Math.round(timeInSeconds * 1000));
 	};
 
 	useLayoutEffect(() => {
@@ -281,9 +321,6 @@ export const AudioSpectrogram: FC = () => {
 
 	const totalWidth =
 		currentDurationMs > 0 ? (currentDurationMs / 1000) * zoom : 0;
-	const cursorPosition = currentTime * zoom;
-	const auditionCursorPosition = auditionTime ? auditionTime * zoom : null;
-	const handleLeftPosition = cursorPosition - scrollLeft;
 
 	let hoverTimeFormatted = msToTimestamp(hoverTimeMs);
 	let tooltipBgColor: string | undefined;
@@ -432,14 +469,10 @@ export const AudioSpectrogram: FC = () => {
 							)}
 
 							<div
+								ref={playheadScrubHandleRef}
 								className={styles.playheadScrubHandle}
 								style={{
-									left: `${handleLeftPosition}px`,
-									display:
-										handleLeftPosition < 0 ||
-										handleLeftPosition > containerWidth
-											? "none"
-											: "block",
+									display: "none",
 								}}
 								onMouseDown={handleScrubStart}
 							/>
@@ -465,10 +498,8 @@ export const AudioSpectrogram: FC = () => {
 										<TileComponent key={tile.tileId} {...tile} />
 									))}
 									<div
+										ref={playheadCursorRef}
 										className={styles.playheadCursor}
-										style={{
-											left: `${cursorPosition}px`,
-										}}
 									/>
 
 									{pendingCursorPosition !== null && (
@@ -479,12 +510,10 @@ export const AudioSpectrogram: FC = () => {
 											}}
 										/>
 									)}
-									{auditionCursorPosition !== null && (
+									{isAuditioning && (
 										<div
+											ref={auditionCursorRef}
 											className={styles.auditionCursor}
-											style={{
-												left: `${auditionCursorPosition}px`,
-											}}
 										/>
 									)}
 									{showRangePreview && previewStyle && (

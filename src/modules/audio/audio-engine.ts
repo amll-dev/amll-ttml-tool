@@ -2,9 +2,8 @@ import {
 	audioEngineStateAtom,
 	audioErrorAtom,
 	audioPlayingAtom,
-	auditionTimeAtom,
 	currentDurationAtom,
-	currentTimeAtom,
+	isAuditioningAtom,
 	loadedAudioAtom,
 } from "$/modules/audio/states/index.ts";
 import { FFmpegAudioEngine } from "$/modules/ffmpeg/index.ts";
@@ -15,11 +14,8 @@ import soundtouchWasmUrl from "$/modules/ffmpeg/worklet/wasm/soundtouch_bg.wasm?
 import { globalStore } from "$/states/store.ts";
 import type { TTMLMetadata } from "$/types/ttml";
 
-let auditionRafId: number | null = null;
-
 class AudioEngineWrapper extends EventTarget {
 	public engine: FFmpegAudioEngine;
-	private timeUpdateRafId: number | null = null;
 
 	//#region Audio context basics
 	private _ctx: AudioContext | null = null;
@@ -41,6 +37,65 @@ class AudioEngineWrapper extends EventTarget {
 	}
 	//#endregion
 
+	//#region Progress Emitter
+	private timeUpdateListeners = new Set<(time: number) => void>();
+	private tickRafId: number | null = null;
+	private auditionEndTime: number | null = null;
+
+	onTimeUpdate(callback: (time: number) => void) {
+		this.timeUpdateListeners.add(callback);
+	}
+
+	offTimeUpdate(callback: (time: number) => void) {
+		this.timeUpdateListeners.delete(callback);
+	}
+
+	private emitTimeUpdate() {
+		const currentTime = this.engine.currentTime;
+		this.timeUpdateListeners.forEach((fn) => {
+			fn(currentTime);
+		});
+	}
+
+	private tick = () => {
+		if (!this.musicPlaying) return;
+
+		if (this.auditionEndTime !== null) {
+			if (this.engine.currentTime >= this.auditionEndTime) {
+				this.engine.pause();
+				this.engine.currentTime = this.auditionEndTime;
+				this.emitTimeUpdate();
+				this.clearAuditionState();
+				return;
+			}
+		}
+
+		this.emitTimeUpdate();
+
+		this.tickRafId = requestAnimationFrame(this.tick);
+	};
+
+	private startTick() {
+		if (this.tickRafId === null) {
+			this.tickRafId = requestAnimationFrame(this.tick);
+		}
+	}
+
+	private stopTick() {
+		if (this.tickRafId !== null) {
+			cancelAnimationFrame(this.tickRafId);
+			this.tickRafId = null;
+		}
+	}
+
+	private clearAuditionState() {
+		if (this.auditionEndTime !== null) {
+			this.auditionEndTime = null;
+			globalStore.set(isAuditioningAtom, false);
+		}
+	}
+	//#endregion
+
 	constructor() {
 		super();
 
@@ -58,42 +113,17 @@ class AudioEngineWrapper extends EventTarget {
 		this.setupEngineListeners();
 	}
 
-	private startTimeUpdateLoop = () => {
-		this.stopTimeUpdateLoop();
-
-		const loop = () => {
-			globalStore.set(currentTimeAtom, (this.engine.currentTime * 1000) | 0);
-			this.timeUpdateRafId = requestAnimationFrame(loop);
-		};
-		this.timeUpdateRafId = requestAnimationFrame(loop);
-	};
-
-	private stopTimeUpdateLoop = () => {
-		if (this.timeUpdateRafId !== null) {
-			cancelAnimationFrame(this.timeUpdateRafId);
-			this.timeUpdateRafId = null;
-		}
-
-		globalStore.set(currentTimeAtom, (this.engine.currentTime * 1000) | 0);
-	};
-
 	private setupEngineListeners() {
 		this.engine.addEventListener("play", () => {
 			globalStore.set(audioPlayingAtom, true);
 			globalStore.set(audioEngineStateAtom, this.engine.state);
-			this.startTimeUpdateLoop();
+			this.startTick();
 		});
 
 		this.engine.addEventListener("pause", () => {
 			globalStore.set(audioPlayingAtom, false);
 			globalStore.set(audioEngineStateAtom, this.engine.state);
-			this.stopTimeUpdateLoop();
-		});
-
-		this.engine.addEventListener("timeupdate", () => {
-			if (!this.musicPlaying) {
-				globalStore.set(currentTimeAtom, (this.engine.currentTime * 1000) | 0);
-			}
+			this.stopTick();
 		});
 
 		this.engine.addEventListener("loadedmetadata", () => {
@@ -103,14 +133,15 @@ class AudioEngineWrapper extends EventTarget {
 
 		this.engine.addEventListener("ended", () => {
 			globalStore.set(audioPlayingAtom, false);
-			this.stopTimeUpdateLoop();
+			this.stopTick();
+			this.clearAuditionState();
 		});
 
 		this.engine.addEventListener("error", (e) => {
 			globalStore.set(audioEngineStateAtom, this.engine.state);
 			globalStore.set(audioErrorAtom, e.detail.message);
 			console.error("[AudioEngine] Error:", e.detail.message);
-			this.stopTimeUpdateLoop();
+			this.stopTick();
 		});
 	}
 
@@ -173,13 +204,20 @@ class AudioEngineWrapper extends EventTarget {
 	}
 
 	seekMusic(offset: number) {
-		this.engine.currentTime = this.clampMusicTime(offset);
+		this.clearAuditionState();
+		const targetTime = this.clampMusicTime(offset);
+
 		if (!this.musicPlaying) {
-			globalStore.set(currentTimeAtom, (this.engine.currentTime * 1000) | 0);
+			this.timeUpdateListeners.forEach((fn) => {
+				fn(targetTime);
+			});
 		}
+
+		this.engine.currentTime = targetTime;
 	}
 
 	async resumeMusic() {
+		this.clearAuditionState();
 		await this.engine.play();
 	}
 
@@ -200,39 +238,14 @@ class AudioEngineWrapper extends EventTarget {
 			return;
 		}
 
-		if (auditionRafId) {
-			cancelAnimationFrame(auditionRafId);
-			auditionRafId = null;
-		}
-		globalStore.set(auditionTimeAtom, null);
-
 		const durationInSeconds = endTimeInSeconds - startTimeInSeconds;
 		if (durationInSeconds <= 0) return;
 
+		this.auditionEndTime = endTimeInSeconds;
+		globalStore.set(isAuditioningAtom, true);
+
 		this.engine.currentTime = startTimeInSeconds;
 		this.engine.play();
-
-		const checkLoop = () => {
-			if (!this.musicPlaying) {
-				globalStore.set(auditionTimeAtom, null);
-				auditionRafId = null;
-				return;
-			}
-
-			const currentAuditionTime = this.engine.currentTime;
-			if (currentAuditionTime >= endTimeInSeconds) {
-				this.engine.pause();
-				this.engine.currentTime = endTimeInSeconds;
-				globalStore.set(currentTimeAtom, (endTimeInSeconds * 1000) | 0);
-				globalStore.set(auditionTimeAtom, null);
-				auditionRafId = null;
-			} else {
-				globalStore.set(auditionTimeAtom, currentAuditionTime);
-				auditionRafId = requestAnimationFrame(checkLoop);
-			}
-		};
-
-		auditionRafId = requestAnimationFrame(checkLoop);
 	}
 	//#endregion
 
@@ -241,6 +254,7 @@ class AudioEngineWrapper extends EventTarget {
 		if (this.musicLoaded) {
 			this.pauseMusic();
 		}
+		this.clearAuditionState();
 		globalStore.set(audioEngineStateAtom, "loading");
 
 		globalStore.set(loadedAudioAtom, src);
