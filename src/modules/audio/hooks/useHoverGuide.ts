@@ -21,6 +21,12 @@ export const useHoverGuide = (sliderWidthPx: number) => {
 				return;
 			}
 
+			const target = e.target as HTMLElement;
+			if (target.closest("[data-drag-type]")) {
+				setHoverState((prev) => ({ ...prev, isVisible: false }));
+				return;
+			}
+
 			const rect = e.currentTarget.getBoundingClientRect();
 			const x = e.clientX - rect.left;
 			const clampedX = Math.max(0, Math.min(x, rect.width));

@@ -1,6 +1,6 @@
 import { Card } from "@radix-ui/themes";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { audioEngine } from "$/modules/audio/audio-engine";
 import {
 	audioEngineStateAtom,
@@ -27,6 +27,10 @@ export const AudioSlider = () => {
 	const wsContainerRef = useRef<HTMLDivElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const cursorRef = useRef<HTMLDivElement>(null);
+	const maskRef = useRef<HTMLDivElement>(null);
+
+	const isScrubbingRef = useRef(false);
+	const scrubProgressRef = useRef(0);
 
 	const workerRef = useRef<Worker | null>(null);
 	const offscreenTransferred = useRef(false);
@@ -144,10 +148,20 @@ export const AudioSlider = () => {
 		let rafId: number;
 		const renderCursor = () => {
 			if (currentDuration > 0 && cursorRef.current && sliderWidthPx > 0) {
-				const progress =
-					audioEngine.musicCurrentTime / (currentDuration / 1000);
+				let progress = 0;
+
+				if (isScrubbingRef.current) {
+					progress = scrubProgressRef.current;
+				} else {
+					progress = audioEngine.musicCurrentTime / (currentDuration / 1000);
+				}
+
 				const xPos = progress * sliderWidthPx;
 				cursorRef.current.style.transform = `translateX(${xPos}px)`;
+
+				if (maskRef.current) {
+					maskRef.current.style.transform = `scaleX(${progress})`;
+				}
 			}
 			rafId = requestAnimationFrame(renderCursor);
 		};
@@ -171,15 +185,39 @@ export const AudioSlider = () => {
 		return regions;
 	}, [lyricLines.lyricLines, selectedLines, currentDuration, sliderWidthPx]);
 
-	const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (currentDuration <= 0 || sliderWidthPx <= 0) return;
-		if (isDraggingRef.current) return;
+	const handleTimelineMouseDown = useCallback(
+		(e: React.MouseEvent<HTMLDivElement>) => {
+			if (currentDuration <= 0 || sliderWidthPx <= 0) return;
+			if (isDraggingRef.current) return;
 
-		const rect = e.currentTarget.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const progress = Math.max(0, Math.min(x / rect.width, 1));
-		audioEngine.seekMusic((progress * currentDuration) / 1000);
-	};
+			const rect = e.currentTarget.getBoundingClientRect();
+
+			const calculateProgress = (clientX: number) => {
+				const x = clientX - rect.left;
+				return Math.max(0, Math.min(x / rect.width, 1));
+			};
+
+			isScrubbingRef.current = true;
+			scrubProgressRef.current = calculateProgress(e.clientX);
+
+			const handleScrubMove = (moveEvent: MouseEvent) => {
+				scrubProgressRef.current = calculateProgress(moveEvent.clientX);
+			};
+
+			const handleScrubUp = (upEvent: MouseEvent) => {
+				isScrubbingRef.current = false;
+				const finalProgress = calculateProgress(upEvent.clientX);
+				audioEngine.seekMusic((finalProgress * currentDuration) / 1000);
+
+				window.removeEventListener("mousemove", handleScrubMove);
+				window.removeEventListener("mouseup", handleScrubUp);
+			};
+
+			window.addEventListener("mousemove", handleScrubMove);
+			window.addEventListener("mouseup", handleScrubUp);
+		},
+		[currentDuration, sliderWidthPx, isDraggingRef],
+	);
 
 	return (
 		<Card
@@ -194,28 +232,11 @@ export const AudioSlider = () => {
 				className={styles.waveformContainer}
 				aria-label="Audio Waveform"
 				ref={wsContainerRef}
-				style={{
-					width: "100%",
-					height: "100%",
-					overflow: "hidden",
-					position: "relative",
-					cursor: "text",
-				}}
 				onMouseMove={handleContainerMouseMove}
 				onMouseLeave={handleContainerMouseLeave}
-				onMouseDown={handleTimelineClick}
+				onMouseDown={handleTimelineMouseDown}
 			>
-				<canvas
-					ref={canvasRef}
-					style={{
-						position: "absolute",
-						top: 0,
-						left: 0,
-						width: "100%",
-						height: "100%",
-						pointerEvents: "none",
-					}}
-				/>
+				<canvas ref={canvasRef} className={styles.waveformCanvas} />
 
 				<HoverGuide hoverState={hoverState} />
 
@@ -231,20 +252,10 @@ export const AudioSlider = () => {
 				))}
 
 				{currentDuration > 0 && (
-					<div
-						ref={cursorRef}
-						style={{
-							position: "absolute",
-							top: 0,
-							left: 0,
-							width: "1px",
-							height: "100%",
-							backgroundColor: "var(--accent-a11)",
-							pointerEvents: "none",
-							zIndex: 20,
-							willChange: "transform",
-						}}
-					/>
+					<>
+						<div ref={maskRef} className={styles.playbackMask} />
+						<div ref={cursorRef} className={styles.playbackCursor} />
+					</>
 				)}
 
 				<AudioRegion

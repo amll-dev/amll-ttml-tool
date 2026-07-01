@@ -1,4 +1,7 @@
 .waveformContainer {
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
 	cursor: text;
 	position: relative;
 	z-index: 1;
@@ -17,7 +20,40 @@
 	padding: 0 0.5rem;
 	transition: none;
 }
+.waveformCanvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
 
+.playbackMask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: var(--accent-a4);
+	pointer-events: none;
+	z-index: 0;
+	transform-origin: left;
+	will-change: transform;
+	transform: scaleX(0);
+}
+
+.playbackCursor {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 2px;
+	height: 100%;
+	background-color: var(--accent-a11);
+	pointer-events: none;
+	z-index: 20;
+	will-change: transform;
+}
 .spectrogramRegion {
 	position: absolute;
 	top: 0;
@@ -78,6 +114,7 @@
 	height: 100%;
 	pointer-events: none;
 	z-index: 10;
+	user-select: none;
 
 	border-left: 1px solid var(--accent-a11, #00ffa21e);
 
