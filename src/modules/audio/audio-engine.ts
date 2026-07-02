@@ -40,7 +40,6 @@ class AudioEngineWrapper extends EventTarget {
 	//#region Progress Emitter
 	private timeUpdateListeners = new Set<(time: number) => void>();
 	private tickRafId: number | null = null;
-	private auditionEndTime: number | null = null;
 
 	onTimeUpdate(callback: (time: number) => void) {
 		this.timeUpdateListeners.add(callback);
@@ -59,16 +58,6 @@ class AudioEngineWrapper extends EventTarget {
 
 	private tick = () => {
 		if (!this.musicPlaying) return;
-
-		if (this.auditionEndTime !== null) {
-			if (this.engine.currentTime >= this.auditionEndTime) {
-				this.engine.pause();
-				this.engine.currentTime = this.auditionEndTime;
-				this.emitTimeUpdate();
-				this.clearAuditionState();
-				return;
-			}
-		}
 
 		this.emitTimeUpdate();
 
@@ -89,8 +78,8 @@ class AudioEngineWrapper extends EventTarget {
 	}
 
 	private clearAuditionState() {
-		if (this.auditionEndTime !== null) {
-			this.auditionEndTime = null;
+		if (this.engine.pauseAt !== null || globalStore.get(isAuditioningAtom)) {
+			this.engine.pauseAt = null;
 			globalStore.set(isAuditioningAtom, false);
 		}
 	}
@@ -124,6 +113,8 @@ class AudioEngineWrapper extends EventTarget {
 			globalStore.set(audioPlayingAtom, false);
 			globalStore.set(audioEngineStateAtom, this.engine.state);
 			this.stopTick();
+			this.emitTimeUpdate();
+			this.clearAuditionState();
 		});
 
 		this.engine.addEventListener("loadedmetadata", () => {
@@ -134,6 +125,7 @@ class AudioEngineWrapper extends EventTarget {
 		this.engine.addEventListener("ended", () => {
 			globalStore.set(audioPlayingAtom, false);
 			this.stopTick();
+			this.emitTimeUpdate();
 			this.clearAuditionState();
 		});
 
@@ -241,7 +233,7 @@ class AudioEngineWrapper extends EventTarget {
 		const durationInSeconds = endTimeInSeconds - startTimeInSeconds;
 		if (durationInSeconds <= 0) return;
 
-		this.auditionEndTime = endTimeInSeconds;
+		this.engine.pauseAt = endTimeInSeconds;
 		globalStore.set(isAuditioningAtom, true);
 
 		this.engine.currentTime = startTimeInSeconds;

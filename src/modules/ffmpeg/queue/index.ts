@@ -6,6 +6,7 @@ const STATE_IS_SEEKING = 1;
 const STATE_READ_INDEX = 2;
 const STATE_WRITE_INDEX = 3;
 const STATE_PLAYBACK_INDEX = 4;
+const STATE_PAUSE_AT_INDEX = 5;
 
 const RING_BUFFER_CAPACITY = 192000 * 2;
 const RING_BUFFER_BYTES_PER_CHANNEL = RING_BUFFER_CAPACITY * 4;
@@ -26,6 +27,8 @@ export interface MainAudioController {
 	getReadIndex(): number;
 	getPlaybackIndex(): number;
 	setSeeking(isSeeking: boolean): void;
+	setPauseAtIndex(index: number): void;
+	clearPauseAtIndex(): void;
 }
 
 /**
@@ -115,6 +118,10 @@ export interface AudioReader {
 	 */
 	readPartial(outputs: Float32Array[], length: number): number;
 	addPlaybackIndex(frames: number): void;
+	getPlaybackIndex(): number;
+	getPauseAtIndex(): number;
+	clearPauseAtIndex(): void;
+	pausePlayback(): void;
 }
 //#endregion
 
@@ -155,6 +162,14 @@ class AudioQueueCore implements MainAudioController, AudioWriter, AudioReader {
 
 	setSeeking(isSeeking: boolean): void {
 		Atomics.store(this.controlBlock, STATE_IS_SEEKING, isSeeking ? 1 : 0);
+	}
+
+	setPauseAtIndex(index: number): void {
+		Atomics.store(this.controlBlock, STATE_PAUSE_AT_INDEX, index);
+	}
+
+	clearPauseAtIndex(): void {
+		Atomics.store(this.controlBlock, STATE_PAUSE_AT_INDEX, -1);
 	}
 	//#endregion
 
@@ -357,6 +372,14 @@ class AudioQueueCore implements MainAudioController, AudioWriter, AudioReader {
 	addPlaybackIndex(frames: number): void {
 		Atomics.add(this.controlBlock, STATE_PLAYBACK_INDEX, frames);
 	}
+
+	getPauseAtIndex(): number {
+		return Atomics.load(this.controlBlock, STATE_PAUSE_AT_INDEX);
+	}
+
+	pausePlayback(): void {
+		Atomics.store(this.controlBlock, STATE_PLAYING, 0);
+	}
 	//#endregion
 
 	private fillSilence(outputs: Float32Array[][]): void {
@@ -382,7 +405,12 @@ class AudioQueueCore implements MainAudioController, AudioWriter, AudioReader {
 export function allocateAudioQueueMemory(channels: number): SharedArrayBuffer {
 	const sabBytes =
 		CONTROL_BLOCK_BYTES + RING_BUFFER_BYTES_PER_CHANNEL * channels;
-	return new SharedArrayBuffer(sabBytes);
+	const sab = new SharedArrayBuffer(sabBytes);
+
+	const controlBlock = new Int32Array(sab, 0, CONTROL_BLOCK_BYTES / 4);
+	Atomics.store(controlBlock, STATE_PAUSE_AT_INDEX, -1);
+
+	return sab;
 }
 
 /**

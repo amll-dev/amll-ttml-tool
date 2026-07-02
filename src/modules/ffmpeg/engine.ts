@@ -28,6 +28,7 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 	private _cover: PlayerCover | null = null;
 	private _error: EngineError | null = null;
 	private _volume = 1.0;
+	private _pauseAt: number | null = null;
 	private baseTime = 0;
 
 	private _tempo = 1.0;
@@ -47,6 +48,12 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 			config.assets.soundtouchWasmUrl,
 			config.gainNode,
 		);
+
+		this.renderer.onMessage = (type) => {
+			if (type === "AUTO_PAUSED") {
+				this.handleAutoPaused();
+			}
+		};
 
 		this.workerClient = new DecoderWorkerClient(config.assets.workerUrl, {
 			onInitDone: (payload) => this.handleWorkerInitDone(payload),
@@ -71,10 +78,16 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 	public get error(): EngineError | null {
 		return this._error;
 	}
+
 	public get volume(): number {
 		return this._volume;
 	}
 	public set volume(val: number) {
+		if (!Number.isFinite(val)) {
+			console.warn("Invalid volume value ignored", val);
+			return;
+		}
+
 		this._volume = Math.max(0, Math.min(1, val));
 
 		if (this.config.gainNode) {
@@ -94,8 +107,12 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 			this.audioController.getPlaybackIndex() / this.renderer.sampleRate
 		);
 	}
-
 	public set currentTime(seconds: number) {
+		if (!Number.isFinite(seconds) || seconds < 0) {
+			console.warn("AudioEngine: Invalid currentTime value ignored", seconds);
+			return;
+		}
+
 		if (
 			this._state !== "ready" &&
 			this._state !== "playing" &&
@@ -104,18 +121,47 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 			return;
 		}
 
-		this.baseTime = seconds;
-
 		this.audioController?.setSeeking(true);
 
+		this.baseTime = seconds;
+
+		this.syncPauseAtToAudioController();
+
 		this.workerClient.seek(seconds);
+	}
+
+	/**
+	 * Sets the target time for auto-pause.
+	 *
+	 * The engine will automatically pause upon reaching this time. If a seek
+	 * operation occurs before this time is reached, the target remains set.
+	 * @param targetSeconds The target absolute timestamp (in seconds).
+	 */
+	public set pauseAt(second: number | null) {
+		if (second !== null && (!Number.isFinite(second) || second < 0)) {
+			console.warn("Invalid pauseAt value ignored", second);
+			return;
+		}
+
+		this._pauseAt = second;
+		this.syncPauseAtToAudioController();
+	}
+	/**
+	 * Gets the target time for auto-pause.
+	 */
+	public get pauseAt(): number | null {
+		return this._pauseAt;
 	}
 
 	public get tempo(): number {
 		return this._tempo;
 	}
-
 	public set tempo(val: number) {
+		if (!Number.isFinite(val)) {
+			console.warn("Invalid tempo value ignored", val);
+			return;
+		}
+
 		this._tempo = Math.max(0.1, val);
 		this.renderer.setTempo(this._tempo);
 	}
@@ -123,16 +169,25 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 	public get pitch(): number {
 		return this._pitch;
 	}
-
 	public set pitch(val: number) {
+		if (!Number.isFinite(val)) {
+			console.warn("Invalid pitch value ignored", val);
+			return;
+		}
+
 		this._pitch = Math.max(0.1, val);
 		this.renderer.setPitch(this._pitch);
 	}
+
 	public get rate(): number {
 		return this._rate;
 	}
-
 	public set rate(val: number) {
+		if (!Number.isFinite(val)) {
+			console.warn("Invalid rate value ignored", val);
+			return;
+		}
+
 		this._rate = Math.max(0.1, val);
 		this.renderer.setRate(this._rate);
 	}
@@ -258,12 +313,32 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 		this.dispatch("error", { code, message });
 	}
 
-	private resetState(): void {
-		this._error = null;
-		this._metadata = {};
-		this._cover = null;
-		this._duration = 0;
-		this.baseTime = 0;
+	private handleAutoPaused(): void {
+		this._pauseAt = null;
+
+		if (this._state !== "playing") return;
+
+		this._state = "paused";
+		this.audioController?.pause();
+		this.workerClient.pause();
+
+		this.stopTimeupdate();
+		this.dispatch("pause");
+	}
+
+	private syncPauseAtToAudioController(): void {
+		if (!this.audioController) return;
+
+		if (this._pauseAt === null) {
+			this.audioController.clearPauseAtIndex();
+		} else {
+			let relativeTargetFrames = Math.floor(
+				(this._pauseAt - this.baseTime) * this.renderer.sampleRate,
+			);
+			relativeTargetFrames = Math.max(0, relativeTargetFrames);
+
+			this.audioController.setPauseAtIndex(relativeTargetFrames);
+		}
 	}
 
 	private startTimeupdate(): void {
@@ -278,6 +353,14 @@ export class FFmpegAudioEngine extends TypedEventTarget<EngineEventMap> {
 			clearInterval(this.timeupdateTimer);
 			this.timeupdateTimer = null;
 		}
+	}
+
+	private resetState(): void {
+		this._error = null;
+		this._metadata = {};
+		this._cover = null;
+		this._duration = 0;
+		this.baseTime = 0;
 	}
 	//#endregion
 }

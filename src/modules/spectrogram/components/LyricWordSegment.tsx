@@ -107,7 +107,6 @@ export const LyricWordSegment: FC<LyricWordSegmentProps> = ({
 		showPerWordRomanization && romanWord && romanWord.trim() !== "";
 
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: 在这里用 <button> 显然不正确
 		<div
 			className={styles.wordSegment}
 			style={dynamicStyles}

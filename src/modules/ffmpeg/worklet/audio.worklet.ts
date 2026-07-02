@@ -84,6 +84,24 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 			return true;
 		}
 
+		const targetPauseIndex = this.audioReader.getPauseAtIndex();
+		let remainingSourceFrames = Infinity;
+		let isHittingTarget = false;
+
+		if (targetPauseIndex !== -1) {
+			const exactCurrentIndex =
+				this.audioReader.getPlaybackIndex() + this.playbackFractional;
+			remainingSourceFrames = targetPauseIndex - exactCurrentIndex;
+
+			if (remainingSourceFrames <= 0) {
+				this.fillSilence(output, WORKLET_BLOCK_SIZE);
+				this.audioReader.clearPauseAtIndex();
+				this.audioReader.pausePlayback();
+				this.port.postMessage({ type: "AUTO_PAUSED" });
+				return true;
+			}
+		}
+
 		while (this.stProcessor.numSamples() < WORKLET_BLOCK_SIZE) {
 			const availableInSAB = this.audioReader.getAvailableReadFrames();
 			if (availableInSAB === 0) {
@@ -110,7 +128,18 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 		}
 
 		const availableST = this.stProcessor.numSamples();
-		const extractAmount = Math.min(availableST, WORKLET_BLOCK_SIZE);
+		let extractAmount = Math.min(availableST, WORKLET_BLOCK_SIZE);
+
+		if (targetPauseIndex !== -1 && extractAmount > 0) {
+			const timeRatio = this.currentTempo * this.currentRate;
+			const allowedOutputFrames = Math.floor(remainingSourceFrames / timeRatio);
+
+			if (extractAmount >= allowedOutputFrames) {
+				extractAmount = Math.max(0, allowedOutputFrames);
+				isHittingTarget = true;
+			}
+		}
+
 		let extracted = 0;
 
 		if (extractAmount > 0) {
@@ -144,6 +173,12 @@ class FFmpegAudioProcessor extends AudioWorkletProcessor {
 			for (let c = 0; c < actualChannels; c++) {
 				output[c].fill(0, extracted);
 			}
+		}
+
+		if (isHittingTarget) {
+			this.audioReader.clearPauseAtIndex();
+			this.audioReader.pausePlayback();
+			this.port.postMessage({ type: "AUTO_PAUSED" });
 		}
 
 		return true;

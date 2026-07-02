@@ -16,6 +16,8 @@ export class AudioRenderer {
 		this.gainNode = gainNode || null;
 	}
 
+	public onMessage?: (type: string, payload?: unknown) => void;
+
 	/**
 	 * Returns true if the AudioWorklet has been completely loaded.
 	 */
@@ -64,20 +66,16 @@ export class AudioRenderer {
 			}
 
 			const currentInitId = ++this.initCounter;
-			const messageHandler = (event: MessageEvent) => {
+			this.workletNode.port.onmessage = (event: MessageEvent) => {
 				const { type, payload } = event.data;
 
-				if (
-					type === "INIT_DONE" &&
-					payload?.initId === currentInitId &&
-					this.workletNode
-				) {
-					this.workletNode.port.removeEventListener("message", messageHandler);
+				if (type === "INIT_DONE" && payload?.initId === currentInitId) {
 					resolve();
+				} else {
+					this.onMessage?.(type, payload);
 				}
 			};
 
-			this.workletNode.port.addEventListener("message", messageHandler);
 			this.workletNode.port.start();
 			this.workletNode.port.postMessage({
 				type: "INIT",
