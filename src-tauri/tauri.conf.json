@@ -1,54 +1,55 @@
 {
-	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-	"productName": "amll-ttml-tool",
-	"version": "0.1.0",
-	"identifier": "net.stevexmh.amll-ttml-tool",
-	"build": {
-		"frontendDist": "../dist",
-		"devUrl": "http://localhost:5173",
-		"beforeDevCommand": "pnpm dev",
-		"beforeBuildCommand": "pnpm build"
-	},
-	"app": {
-		"windows": [
-			{
-				"title": "",
-				"label": "main",
-				"width": 800,
-				"height": 600,
-				"resizable": true,
-				"devtools": true,
-				"fullscreen": false,
-				"dragDropEnabled": false,
-				"visible": false
-			}
-		],
-		"security": {
-			"csp": null,
-			"headers": {
-				"Cross-Origin-Opener-Policy": "same-origin",
-				"Cross-Origin-Embedder-Policy": "require-corp"
-			}
-		}
-	},
-	"bundle": {
-		"active": true,
-		"targets": "all",
-		"icon": [
-			"icons/32x32.png",
-			"icons/128x128.png",
-			"icons/128x128@2x.png",
-			"icons/icon.icns",
-			"icons/icon.ico"
-		],
-		"createUpdaterArtifacts": true
-	},
-	"plugins": {
-		"updater": {
-			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZCMTA0MTJFNjg1NTIyMTcKUldRWElsVm9Ma0VRKzRRUW05VlkvWXlVQTAxQ2VzTitZNlJvNkFiNzhoRW9jQTBEVEhUeVhqMFMK",
-			"endpoints": [
-				"https://github.com/amll-dev/amll-ttml-tool/releases/latest/download/latest.json"
-			]
-		}
-	}
+    "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+    "productName": "AMLL TTML Tool",
+    "version": "0.1.0",
+    "identifier": "net.stevexmh.amll-ttml-tool",
+    "build": {
+        "frontendDist": "../dist",
+        "devUrl": "http://localhost:5173",
+        "beforeDevCommand": "pnpm dev",
+        "beforeBuildCommand": "pnpm build"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "",
+                "label": "main",
+                "width": 800,
+                "height": 600,
+                "resizable": true,
+                "devtools": true,
+                "fullscreen": false,
+                "dragDropEnabled": false,
+                "visible": false
+            }
+        ],
+        "security": {
+            "csp": null,
+            "headers": {
+                "Cross-Origin-Opener-Policy": "same-origin",
+                "Cross-Origin-Embedder-Policy": "require-corp"
+            }
+        }
+    },
+    "bundle": {
+        "category": "Utility",
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "createUpdaterArtifacts": true
+    },
+    "plugins": {
+        "updater": {
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZCMTA0MTJFNjg1NTIyMTcKUldRWElsVm9Ma0VRKzRRUW05VlkvWXlVQTAxQ2VzTitZNlJvNkFiNzhoRW9jQTBEVEhUeVhqMFMK",
+            "endpoints": [
+                "https://github.com/amll-dev/amll-ttml-tool/releases/latest/download/latest.json"
+            ]
+        }
+    }
 }
