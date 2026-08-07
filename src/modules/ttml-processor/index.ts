@@ -4,6 +4,11 @@ import type {
 	TTMLLyric as AppTTMLLyric,
 	TTMLMetadata as AppTTMLMetadata,
 } from "$/types/ttml";
+import {
+	TranslationOutputMode,
+	translationOutputModeAtom,
+} from "$/modules/settings/states";
+import { globalStore } from "$/states/store.ts";
 import type {
 	AmllLyricLine,
 	AmllLyricResult,
@@ -42,6 +47,34 @@ const RENAMED_METADATA_KEYS: Record<string, string> = {
 const EXPORT_RENAMED_METADATA_KEYS: Record<string, string> = {
 	songwriter: "songwriters",
 };
+//#endregion
+
+//#region 生成器配置
+/**
+ * 根据首选项中的翻译输出方式，生成默认的 TTML 生成器配置
+ *
+ * - {@link TranslationOutputMode.AppleMusic}：逐行翻译/音译写入 `<iTunesMetadata>`
+ * - {@link TranslationOutputMode.Amll}：逐行翻译/音译写入为内嵌的
+ *   `x-translation` / `x-roman`
+ */
+export function getDefaultGeneratorConfig(): Partial<GeneratorConfig> {
+	return {
+		useAppleFormatRules:
+			globalStore.get(translationOutputModeAtom) ===
+			TranslationOutputMode.AppleMusic,
+	};
+}
+
+/**
+ * 将调用方传入的生成器配置与首选项中的默认配置合并
+ *
+ * 调用方显式指定的字段优先于首选项
+ */
+function withDefaultGeneratorConfig(
+	config?: Partial<GeneratorConfig>,
+): Partial<GeneratorConfig> {
+	return { ...getDefaultGeneratorConfig(), ...config };
+}
 //#endregion
 
 //#region 底层 API
@@ -233,7 +266,11 @@ export function amllToTTML(
 	config?: Partial<GeneratorConfig>,
 ): Result<string> {
 	const processedAmllResult = postProcessLyricLines(amllResult);
-	return rawAmllToTtml(processedAmllResult, options, config) as Result<string>;
+	return rawAmllToTtml(
+		processedAmllResult,
+		options,
+		withDefaultGeneratorConfig(config),
+	) as Result<string>;
 }
 
 /**

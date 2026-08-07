@@ -113,6 +113,15 @@
 				"line1": "简单布局能够满足大部分使用者的基本需求",
 				"line2": "如果你需要更加高效的打轴的话，可以考虑切换到高级模式"
 			},
+			"translationOutputMode": "翻译输出方式",
+			"translationOutputModeDesc": {
+				"line1": "AMLL 样式将逐行翻译以 x-translation 内嵌在歌词行中",
+				"line2": "Apple Music 样式将翻译写入 <head> 的 iTunesMetadata 中"
+			},
+			"translationOutputModeOptions": {
+				"amll": "AMLL 样式",
+				"appleMusic": "Apple Music 样式"
+			},
 			"defaultTtmlAuthorGithub": "默认 TTML 作者 GitHub ID",
 			"defaultTtmlAuthorGithubDesc": "当 ttmlAuthorGithub 为空时自动填入",
 			"defaultTtmlAuthorGithubLogin": "默认 TTML 作者用户名",
@@ -164,6 +173,7 @@
 		},
 		"group": {
 			"display": "显示",
+			"translationOutput": "导出",
 			"metadata": "元数据",
 			"timing": "打轴",
 			"playback": "播放",

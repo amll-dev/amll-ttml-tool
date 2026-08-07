@@ -11,6 +11,7 @@ import {
 	Stack24Regular,
 	Timer24Regular,
 	TopSpeed24Regular,
+	Translate24Regular,
 } from "@fluentui/react-icons";
 import {
 	Flex,
@@ -37,6 +38,8 @@ import {
 	smartFirstWordAtom,
 	smartLastWordAtom,
 	syncJudgeModeAtom,
+	TranslationOutputMode,
+	translationOutputModeAtom,
 } from "$/modules/settings/states";
 import { lyricLinesAtom } from "$/states/main";
 import {
@@ -50,6 +53,9 @@ const textFieldActionStyle = { width: "min(220px, 100%)" };
 
 export const SettingsCommonTab = () => {
 	const [layoutMode, setLayoutMode] = useAtom(layoutModeAtom);
+	const [translationOutputMode, setTranslationOutputMode] = useAtom(
+		translationOutputModeAtom,
+	);
 	const [syncJudgeMode, setSyncJudgeMode] = useAtom(syncJudgeModeAtom);
 	const [keyBindingTriggerMode, setKeyBindingTriggerMode] = useAtom(
 		keyBindingTriggerModeAtom,
@@ -170,6 +176,53 @@ export const SettingsCommonTab = () => {
 								</Select.Item>
 								<Select.Item value={LayoutMode.Advance}>
 									{t("settings.common.layoutModeOptions.advance", "高级模式")}
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					}
+				/>
+			</SettingsGroup>
+
+			<SettingsGroup title={t("settings.group.translationOutput", "导出")}>
+				<SettingsRow
+					icon={<Translate24Regular />}
+					title={t(
+						"settings.common.translationOutputMode",
+						"翻译输出方式",
+					)}
+					description={
+						<>
+							{t(
+								"settings.common.translationOutputModeDesc.line1",
+								"AMLL 样式将逐行翻译以 x-translation 内嵌在歌词行中",
+							)}
+							<br />
+							{t(
+								"settings.common.translationOutputModeDesc.line2",
+								"Apple Music 样式将翻译写入 <head> 的 iTunesMetadata 中",
+							)}
+						</>
+					}
+					action={
+						<Select.Root
+							value={translationOutputMode}
+							onValueChange={(v) =>
+								setTranslationOutputMode(v as TranslationOutputMode)
+							}
+						>
+							<Select.Trigger />
+							<Select.Content>
+								<Select.Item value={TranslationOutputMode.Amll}>
+									{t(
+										"settings.common.translationOutputModeOptions.amll",
+										"AMLL 样式",
+									)}
+								</Select.Item>
+								<Select.Item value={TranslationOutputMode.AppleMusic}>
+									{t(
+										"settings.common.translationOutputModeOptions.appleMusic",
+										"Apple Music 样式",
+									)}
 								</Select.Item>
 							</Select.Content>
 						</Select.Root>
