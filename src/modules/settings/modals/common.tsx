@@ -188,18 +188,29 @@ export const SettingsCommonTab = () => {
 					icon={<Translate24Regular />}
 					title={t(
 						"settings.common.translationOutputMode",
-						"翻译输出方式",
+						"歌词导出方式",
 					)}
 					description={
 						<>
 							{t(
 								"settings.common.translationOutputModeDesc.line1",
-								"AMLL 样式将逐行翻译以 x-translation 内嵌在歌词行中",
+								"AMLL 样式将逐行翻译以 x-translation 内嵌在歌词行中，",
 							)}
 							<br />
 							{t(
 								"settings.common.translationOutputModeDesc.line2",
-								"Apple Music 样式将翻译写入 <head> 的 iTunesMetadata 中",
+								"x-bg 有行起始时间与结束时间。",
+							)}
+							<br />
+							<br />
+							{t(
+								"settings.common.translationOutputModeDesc.line3",
+								"Apple Music 样式将翻译写入 <head> 的 iTunesMetadata 中，",
+							)}
+							<br />
+							{t(
+								"settings.common.translationOutputModeDesc.line4",
+								"但无 x-bg 行时间。",
 							)}
 						</>
 					}

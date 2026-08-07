@@ -116,7 +116,9 @@
 			"translationOutputMode": "翻译输出方式",
 			"translationOutputModeDesc": {
 				"line1": "AMLL 样式将逐行翻译以 x-translation 内嵌在歌词行中",
-				"line2": "Apple Music 样式将翻译写入 <head> 的 iTunesMetadata 中"
+				"line2": "x-bg 有行起始时间与结束时间。",
+				"line3": "Apple Music 样式将翻译写入 <head> 的 iTunesMetadata 中，",
+				"line4": "但无 x-bg 行时间。"
 			},
 			"translationOutputModeOptions": {
 				"amll": "AMLL 样式",

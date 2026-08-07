@@ -115,8 +115,10 @@
 			},
 			"translationOutputMode": "Translation Output Style",
 			"translationOutputModeDesc": {
-				"line1": "AMLL style embeds line translations inline as x-translation",
-				"line2": "Apple Music style writes translations into iTunesMetadata in <head>"
+				"line1": "AMLL style embeds line translations inline as x-translation,",
+				"line2": "x-bg has its own start and end times.",
+				"line3": "Apple Music style writes translations into iTunesMetadata in <head>,",
+				"line4": "but x-bg does not have line time."
 			},
 			"translationOutputModeOptions": {
 				"amll": "AMLL Style",
