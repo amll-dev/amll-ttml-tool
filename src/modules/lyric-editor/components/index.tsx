@@ -10,8 +10,8 @@
  */
 
 import { Box, ContextMenu, Flex, Text } from "@radix-ui/themes";
-import { atom, useAtomValue, useSetAtom } from "jotai";
-import { splitAtom } from "jotai/utils";
+import { atom, useAtomValue, useSetAtom, useStore } from "jotai";
+import { selectAtom, splitAtom } from "jotai/utils";
 import { useSetImmerAtom } from "jotai-immer";
 import { focusAtom } from "jotai-optics";
 import {
@@ -45,6 +45,21 @@ const lyricLinesOnlyAtom = splitAtom(
 	focusAtom(lyricLinesAtom, (o) => o.prop("lyricLines")),
 );
 
+const lyricLineIdsAtom = selectAtom(
+	lyricLinesAtom,
+	(state) => state.lyricLines.map((line) => line.id),
+	(prev, next) =>
+		prev.length === next.length && prev.every((id, i) => id === next[i]),
+);
+
+const lyricIdToIndexMapAtom = selectAtom(lyricLineIdsAtom, (ids) => {
+	const map = new Map<string, number>();
+	ids.forEach((id, index) => {
+		map.set(id, index);
+	});
+	return map;
+});
+
 const findCurrentLineIndex = (lines: LyricLine[], currentTime: number) => {
 	const scan = (predicate?: (line: LyricLine) => boolean) => {
 		let previousIndex = -1;
@@ -69,8 +84,8 @@ const findCurrentLineIndex = (lines: LyricLine[], currentTime: number) => {
 };
 
 export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
+	const store = useStore();
 	const editLyric = useAtomValue(lyricLinesOnlyAtom);
-	const lyricLines = useAtomValue(lyricLinesAtom).lyricLines;
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 	const setSelectedLines = useSetAtom(selectedLinesAtom);
 	const toolMode = useAtomValue(toolModeAtom);
@@ -82,8 +97,6 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 
 	const viewRef = useRef<ViewportListRef>(null);
 	const viewElRef = useRef<HTMLDivElement>(null);
-	const lyricLinesRef = useRef(lyricLines);
-	lyricLinesRef.current = lyricLines;
 	const lastHandledLocateRef = useRef(locateAction);
 	const lastHandledJumpRef = useRef<number | null>(null);
 
@@ -111,21 +124,17 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 			atom((get) => {
 				if (toolMode !== ToolMode.Sync) return;
 				const selectedLines = get(selectedLinesAtom);
-				let scrollToIndex = Number.NaN;
-				let i = 0;
-				for (const lineAtom of editLyric) {
-					const line = get(lineAtom);
-					if (selectedLines.has(line.id)) {
-						scrollToIndex = i;
-						break;
+				if (selectedLines.size === 0) return;
+				const idToIndexMap = get(lyricIdToIndexMapAtom);
+				for (const id of selectedLines) {
+					const index = idToIndexMap.get(id);
+					if (index !== undefined) {
+						return index;
 					}
-
-					i++;
 				}
-				if (Number.isNaN(scrollToIndex)) return;
-				return scrollToIndex;
+				return;
 			}),
-		[editLyric, toolMode],
+		[toolMode],
 	);
 	const scrollToIndex = useAtomValue(scrollToIndexAtom);
 
@@ -141,7 +150,7 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 	}, []);
 
 	const handleLocate = useCallback(() => {
-		const lines = lyricLinesRef.current;
+		const lines = store.get(lyricLinesAtom).lyricLines;
 		const currentTime = audioEngine.musicCurrentTime * 1000;
 		const index = findCurrentLineIndex(lines, currentTime);
 		if (index === -1) return;
@@ -150,7 +159,7 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 		if (targetLine) {
 			setSelectedLines(new Set([targetLine.id]));
 		}
-	}, [scrollToLineIndex, setSelectedLines]);
+	}, [store, scrollToLineIndex, setSelectedLines]);
 
 	useEffect(() => {
 		if (scrollToIndex === undefined) return;
@@ -167,13 +176,12 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 	useEffect(() => {
 		if (!jumpAction || jumpAction.ts === lastHandledJumpRef.current) return;
 		lastHandledJumpRef.current = jumpAction.ts;
-		const targetIndex = lyricLinesRef.current.findIndex(
-			(l) => l.id === jumpAction.id,
-		);
-		if (targetIndex !== -1) {
+		const idToIndexMap = store.get(lyricIdToIndexMapAtom);
+		const targetIndex = idToIndexMap.get(jumpAction.id);
+		if (targetIndex !== undefined && targetIndex !== -1) {
 			scrollToLineIndex(targetIndex);
 		}
-	}, [jumpAction, scrollToLineIndex]);
+	}, [jumpAction, store, scrollToLineIndex]);
 
 	const { onPointerDown } = useLyricListDrag({
 		containerRef: viewElRef,

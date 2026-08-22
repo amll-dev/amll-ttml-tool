@@ -10,7 +10,7 @@
  */
 
 import { atom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
+import { atomWithStorage, selectAtom } from "jotai/utils";
 import { REDO, UNDO, withHistory } from "jotai-history";
 import { uid } from "uid";
 import { identifyProject } from "$/modules/project/logic/project-info";
@@ -167,3 +167,26 @@ export const isCopyModeAtom = atom(false);
  * 用于触发定位当前行事件的 Atom
  */
 export const locateActionAtom = atom(0);
+
+/**
+ * 仅在行增删、行顺序改变时更新的 ID 数组
+ */
+export const lyricLineIdsAtom = selectAtom(
+	lyricLinesAtom,
+	(state) => state.lyricLines.map((line) => line.id),
+	(prev, next) =>
+		prev.length === next.length && prev.every((id, i) => id === next[i]),
+);
+
+/**
+ * 仅在 ID 结构变化时更新的 ID -> Index 哈希表
+ *
+ * 用于 O(1) 查找行号
+ */
+export const lyricIdToIndexMapAtom = selectAtom(lyricLineIdsAtom, (ids) => {
+	const map = new Map<string, number>();
+	ids.forEach((id, index) => {
+		map.set(id, index);
+	});
+	return map;
+});
