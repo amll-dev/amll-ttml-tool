@@ -195,7 +195,22 @@
 			"palette": "配色方案",
 			"paletteCustom": "自定义",
 			"gradientEditorDesc": "Pos 0.0 对应最安静的部分，1.0 对应最响亮的部分。建议 Pos 越大，使用亮度越高的颜色。",
-			"addStop": "添加色标"
+			"addStop": "添加色标",
+			"frequencyAxis": "频率轴",
+			"logAmountDesc": "控制频率轴的对数程度：0 为线性，1 为完全对数，低频会占用更多行。该设置同时作用于普通频谱与重分配频谱。",
+			"reassignDesc": "使用相位声码器估计瞬时频率并把能量重分配，频谱会锐利很多，但计算量更大。",
+			"fftSizeDesc": "越大频率分辨率越高，但时间分辨率越低、计算量越大。",
+			"overlapDesc": "重叠越高，横向（时间）分辨率越高，但计算量也越大。重叠过低（≤50%）会因相位混叠出现伪影，建议 87.5% 及以上。",
+		"reassignOnlyParams": "FFT 窗口大小与重叠只作用于重分配频谱；普通频谱固定使用 FFT 1024 / 帧移 64（约 93.75% 重叠）。",
+			"naturalWeighting": "自然加权工作区域",
+			"naturalWeightingDesc": "自然加权（频谱倾斜）用于补偿自然音频的能量滚降：压低低频、提升高频，避免低频在显示上压倒高频。",
+			"naturalWeightingNone": "无",
+			"naturalWeightingNormal": "仅普通频谱",
+			"naturalWeightingReassign": "仅重分配频谱",
+			"naturalWeightingBoth": "全部",
+			"naturalWeightingTilt": "自然加权倾斜度",
+			"naturalWeightingTiltDesc": "单位为 dB/倍频程，正值提升高频、压低低频；0 表示不倾斜。",
+			"naturalWeightingTiltOff": "关闭"
 		},
 		"personalization": {
 			"theme": "外观主题",
@@ -679,7 +694,16 @@
 		"loadAudio": "加载音频文件",
 		"showUnselectedLines": "显示未选中行",
 		"showBeatLines": "在频谱图上显示拍子",
-		"clickToCalibrateBeatN": "点击校准第 {n} 拍"
+		"clickToCalibrateBeatN": "点击校准第 {n} 拍",
+		"frequencyAxis": "频率轴",
+		"linear": "线性",
+		"logarithmic": "对数 {percent}%",
+		"reassign": "频率重分配",
+		"fftSize": "FFT 窗口大小（重分配）",
+		"overlap": "重叠（重分配）",
+		"applyReassign": "应用并重新计算",
+		"reassignPending": "参数已修改，点击按钮后才会重新计算。",
+		"reassignApplied": "参数已生效。"
 	},
 	"pwa": {
 		"offlineReady": "网站已成功离线缓存，后续可离线访问本网页",

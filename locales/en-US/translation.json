@@ -195,7 +195,22 @@
 			"palette": "Color Palette",
 			"paletteCustom": "Custom",
 			"gradientEditorDesc": "A Pos value of 0.0 corresponds to the quietest part, and 1.0 corresponds to the loudest part. It is recommended to use brighter colors for larger Pos values.",
-			"addStop": "Add Color Stop"
+			"addStop": "Add Color Stop",
+			"frequencyAxis": "Frequency Axis",
+			"logAmountDesc": "Controls how logarithmic the frequency axis is: 0 is linear, 1 is fully logarithmic, giving more rows to low frequencies. This applies to both the normal and the reassignment spectrogram.",
+			"reassignDesc": "Uses a phase vocoder to estimate the instantaneous frequency and reassign energy, producing a much sharper spectrogram at a higher computational cost.",
+			"fftSizeDesc": "A larger window gives better frequency resolution but worse time resolution and a higher cost.",
+			"overlapDesc": "A higher overlap gives better horizontal (time) resolution at the cost of more computation. Too low an overlap (<=50%) causes phase-wrapping artifacts; 87.5% or higher is recommended.",
+		"reassignOnlyParams": "The FFT window size and overlap only affect the reassignment spectrogram. The normal spectrogram always uses FFT 1024 / hop 64 (about 93.75% overlap).",
+			"naturalWeighting": "Natural Weighting Scope",
+			"naturalWeightingDesc": "Natural weighting (spectral tilt) compensates the natural energy roll-off of audio: it attenuates low frequencies and boosts high ones so the lows do not dominate the display.",
+			"naturalWeightingNone": "None",
+			"naturalWeightingNormal": "Normal spectrogram only",
+			"naturalWeightingReassign": "Reassigned spectrogram only",
+			"naturalWeightingBoth": "Both",
+			"naturalWeightingTilt": "Natural Weighting Slope",
+			"naturalWeightingTiltDesc": "Unit: dB per octave. Positive values boost high frequencies and attenuate low ones; 0 disables the tilt.",
+			"naturalWeightingTiltOff": "Off"
 		},
 		"personalization": {
 			"theme": "Appearance theme",
@@ -679,7 +694,16 @@
 		"loadAudio": "Load an audio file",
 		"showUnselectedLines": "Show unselected lines",
 		"showBeatLines": "Show beats on spectrogram",
-		"clickToCalibrateBeatN": "Click to calibrate beat {n}"
+		"clickToCalibrateBeatN": "Click to calibrate beat {n}",
+		"frequencyAxis": "Frequency Axis",
+		"linear": "Linear",
+		"logarithmic": "Log {percent}%",
+		"reassign": "Frequency Reassignment",
+		"fftSize": "FFT Window Size (reassignment)",
+		"overlap": "Overlap (reassignment)",
+		"applyReassign": "Apply & Recompute",
+		"reassignPending": "Parameters changed. Click the button to recompute.",
+		"reassignApplied": "Parameters applied."
 	},
 	"pwa": {
 		"offlineReady": "Site successfully cached for offline use",

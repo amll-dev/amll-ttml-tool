@@ -1,4 +1,5 @@
 import {
+	DataTrending24Regular,
 	EyeFilled,
 	EyeOffFilled,
 	MusicNote2Filled,
@@ -8,7 +9,9 @@ import {
 	Button,
 	Flex,
 	IconButton,
+	Popover,
 	Slider,
+	Switch,
 	Text,
 	Theme,
 	Tooltip,
@@ -39,15 +42,27 @@ import { useSpectrogramResize } from "$/modules/spectrogram/hooks/useSpectrogram
 import { useSpectrogramWorker } from "$/modules/spectrogram/hooks/useSpectrogramWorker.ts";
 import { useTimelineEditing } from "$/modules/spectrogram/hooks/useTimelineEditing.ts";
 import {
+	commitLogAmountAtom,
 	currentPaletteAtom,
+	effectiveLogAmountAtom,
+	naturalWeightingScopeAtom,
+	naturalWeightingTiltAtom,
+	setReassignEnabledAtom,
 	showBeatLinesAtom,
 	spectrogramContainerWidthAtom,
 	spectrogramGainAtom,
 	spectrogramHeightAtom,
 	spectrogramHoverPxAtom,
 	spectrogramHoverTimeMsAtom,
+	spectrogramLogAmountAppliedAtom,
+	spectrogramLogAmountAtom,
+	spectrogramReassignAppliedAtom,
+	spectrogramReassignAtom,
+	spectrogramReassignFftSizeAtom,
+	spectrogramReassignOverlapAtom,
 } from "$/modules/spectrogram/states";
 import { isDraggingAtom } from "$/modules/spectrogram/states/dnd.ts";
+import { hopLengthFromOverlap } from "$/modules/spectrogram/utils/reassigned-spectrogram";
 import { selectedLinesAtom, showUnselectedLinesAtom } from "$/states/main.ts";
 import { msToTimestamp } from "$/utils/timestamp.ts";
 import styles from "./AudioSpectrogram.module.css";
@@ -84,6 +99,47 @@ export const AudioSpectrogram: FC = () => {
 		showUnselectedLinesAtom,
 	);
 	const [showBeatLines, setShowBeatLines] = useAtom(showBeatLinesAtom);
+	const [logAmount, setLogAmount] = useAtom(spectrogramLogAmountAtom);
+	const reassign = useAtomValue(spectrogramReassignAtom);
+	const setReassign = useSetAtom(setReassignEnabledAtom);
+	const reassignFftSize = useAtomValue(spectrogramReassignFftSizeAtom);
+	const reassignOverlap = useAtomValue(spectrogramReassignOverlapAtom);
+	const naturalWeightingScope = useAtomValue(naturalWeightingScopeAtom);
+	const naturalWeightingTilt = useAtomValue(naturalWeightingTiltAtom);
+	const [reassignApplied, setReassignApplied] = useAtom(
+		spectrogramReassignAppliedAtom,
+	);
+	const setLogAmountApplied = useSetAtom(spectrogramLogAmountAppliedAtom);
+	const commitLogAmount = useSetAtom(commitLogAmountAtom);
+
+	// 首次挂载时把已保存的对数程度同步为「已提交」值
+	const didInitLogAmountRef = useRef(false);
+	useEffect(() => {
+		if (didInitLogAmountRef.current) return;
+		didInitLogAmountRef.current = true;
+		setLogAmountApplied((prev) => prev ?? logAmount);
+	}, [logAmount, setLogAmountApplied]);
+
+	// 重分配模式下，滑块/选项改的是草稿，只有点「应用」才会真正重算；
+	// 普通模式下，对数程度也是在滑块松手（onValueCommit）后才提交重算
+	const effectiveLogAmount = useAtomValue(effectiveLogAmountAtom);
+	const effectiveFftSize = reassignApplied.fftSize;
+	const effectiveHopLength = hopLengthFromOverlap(
+		reassignApplied.fftSize,
+		reassignApplied.overlapPercent,
+	);
+	const reassignDirty =
+		reassignFftSize !== reassignApplied.fftSize ||
+		reassignOverlap !== reassignApplied.overlapPercent ||
+		logAmount !== reassignApplied.logAmount;
+
+	const applyReassignConfig = useCallback(() => {
+		setReassignApplied({
+			fftSize: reassignFftSize,
+			overlapPercent: reassignOverlap,
+			logAmount,
+		});
+	}, [setReassignApplied, reassignFftSize, reassignOverlap, logAmount]);
 
 	const { setTapMode, isSpectrogramTapMode, totalTapCount, triggerTap } =
 		useBpmTapEngine();
@@ -251,6 +307,12 @@ export const AudioSpectrogram: FC = () => {
 				height: dataHeight,
 				tileWidthPx: targetLodWidth,
 				paletteId: currentPaletteId,
+				logAmount: effectiveLogAmount,
+				reassign: reassign,
+				fftSize: effectiveFftSize,
+				hopLength: effectiveHopLength,
+				naturalWeightingScope: naturalWeightingScope,
+				naturalWeightingTilt: naturalWeightingTilt,
 			});
 
 			const cacheEntry = tileCache.current.get(cacheId);
@@ -272,6 +334,12 @@ export const AudioSpectrogram: FC = () => {
 		containerWidth,
 		gain,
 		dataHeight,
+		effectiveLogAmount,
+		effectiveFftSize,
+		effectiveHopLength,
+		reassign,
+		naturalWeightingScope,
+		naturalWeightingTilt,
 		requestTileIfNeeded,
 		tileCache,
 		palette.id,
@@ -594,6 +662,68 @@ export const AudioSpectrogram: FC = () => {
 				</div>
 
 				<div className={`${styles.sidebar} ${styles.rightSidebar}`}>
+					<Popover.Root>
+						<Popover.Trigger>
+							<IconButton
+								variant={logAmount > 0 || reassign ? "solid" : "outline"}
+								aria-label={t("spectrogram.frequencyAxis", "频率轴")}
+							>
+								<DataTrending24Regular />
+							</IconButton>
+						</Popover.Trigger>
+						<Popover.Content width="280px">
+							<Flex direction="column" gap="3">
+								<Flex align="center" justify="between" gap="2">
+									<Text size="2" weight="medium">
+										{t("spectrogram.frequencyAxis", "频率轴")}
+									</Text>
+									<Text size="1" color="gray">
+										{logAmount <= 0
+											? t("spectrogram.linear", "线性")
+											: t("spectrogram.logarithmic", "对数 {percent}%", {
+													percent: Math.round(logAmount * 100),
+												})}
+									</Text>
+								</Flex>
+								<Slider
+									min={0}
+									max={1}
+									step={0.01}
+									value={[logAmount]}
+									onValueChange={(v) => setLogAmount(v[0])}
+									onValueCommit={(v) => commitLogAmount(v[0])}
+								/>
+								<Flex align="center" justify="between" gap="2">
+									<Text size="2">
+										{t("spectrogram.reassign", "频率重分配")}
+									</Text>
+									<Switch
+										checked={reassign}
+										onCheckedChange={setReassign}
+									/>
+								</Flex>
+								{reassign && (
+									<>
+										<Button
+											onClick={applyReassignConfig}
+											disabled={!reassignDirty}
+											variant={reassignDirty ? "solid" : "soft"}
+										>
+											{t("spectrogram.applyReassign", "应用并重新计算")}
+										</Button>
+										<Text size="1" color="gray">
+											{reassignDirty
+												? t(
+														"spectrogram.reassignPending",
+														"参数已修改，点击按钮后才会重新计算。",
+													)
+												: t("spectrogram.reassignApplied", "参数已生效。")}
+										</Text>
+									</>
+								)}
+							</Flex>
+						</Popover.Content>
+					</Popover.Root>
 					<Tooltip
 						content={t("spectrogram.showBeatLines", "在频谱图上显示拍子")}
 						side="left"

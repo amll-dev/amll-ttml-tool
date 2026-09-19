@@ -11,6 +11,8 @@ import {
 import { SettingsGroup, SettingsRow } from "./SettingsGroup";
 import {
 	SettingsSpectrogramCustomPalettePage,
+	SettingsSpectrogramFrequencyRows,
+	SettingsSpectrogramNaturalWeightingRows,
 	SettingsSpectrogramPalettePage,
 } from "./spectrogram";
 
@@ -101,6 +103,8 @@ export const SettingsPersonalizationTab = ({
 							<SettingsSpectrogramPalettePage
 								onOpenCustomPalette={() => onSubpageChange("customPalette")}
 							/>
+							<SettingsSpectrogramFrequencyRows />
+							<SettingsSpectrogramNaturalWeightingRows />
 						</SettingsGroup>
 					</Flex>
 				</motion.div>
