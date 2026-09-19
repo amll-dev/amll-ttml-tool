@@ -116,6 +116,11 @@ export default defineConfig({
 			"Cross-Origin-Opener-Policy": "same-origin",
 		},
 		strictPort: true,
+		watch: {
+			// Tauri 的 Rust 构建产物会被 cargo 锁定，Vite 监听它们会导致
+			// Windows 上抛出 EBUSY: resource busy or locked 而崩溃
+			ignored: ["**/src-tauri/**"],
+		},
 	},
 	envPrefix: ["VITE_", "TAURI_", "AMLL_", "SENTRY_"],
 	build: {
