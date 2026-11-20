@@ -22,6 +22,7 @@ import {
 	useImperativeHandle,
 	useMemo,
 	useRef,
+	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -29,6 +30,7 @@ import { ViewportList, type ViewportListRef } from "react-viewport-list";
 import { useFileOpener } from "$/hooks/useFileOpener.ts";
 import { audioEngine } from "$/modules/audio/audio-engine.ts";
 import { useLyricListDrag } from "$/modules/lyric-drag/useLyricListDrag";
+import { LayoutMode, layoutModeAtom } from "$/modules/settings/states/index.ts";
 import {
 	locateActionAtom,
 	lyricLinesAtom,
@@ -89,8 +91,27 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
 	const setSelectedLines = useSetAtom(selectedLinesAtom);
 	const toolMode = useAtomValue(toolModeAtom);
+	const layoutMode = useAtomValue(layoutModeAtom);
+	const advanced =
+		toolMode === ToolMode.Edit && layoutMode === LayoutMode.Advance;
 	const locateAction = useAtomValue(locateActionAtom);
 	const jumpAction = useAtomValue(outlineJumpActionAtom);
+
+	const [firstVisibleIndex, setFirstVisibleIndex] = useState(-1);
+	const [listLayout, setListLayout] = useState({ advanced, initialIndex: -1 });
+	if (listLayout.advanced !== advanced) {
+		setListLayout({
+			advanced,
+			initialIndex: editLyric.length ? firstVisibleIndex : -1,
+		});
+	}
+
+	const handleViewportIndexesChange = useCallback(
+		([first]: [number, number]) => {
+			setFirstVisibleIndex(first);
+		},
+		[],
+	);
 
 	const { t } = useTranslation();
 	const { openFile } = useFileOpener();
@@ -231,7 +252,11 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 					<div className={styles.dropIndicator} />
 
 					<ViewportList
-						overscan={10}
+						// Re-measure from the visible line when the editing layout changes.
+						key={String(advanced)}
+						initialIndex={listLayout.initialIndex}
+						onViewportIndexesChange={handleViewportIndexesChange}
+						overscan={advanced ? 1 : 10}
 						items={editLyric}
 						ref={viewRef}
 						viewportRef={viewElRef}
@@ -241,6 +266,7 @@ export const LyricLinesView: FC = forwardRef<HTMLDivElement>((_props, ref) => {
 								key={`${lineAtom}`}
 								lineAtom={lineAtom}
 								lineIndex={i}
+								advanced={advanced}
 								onPointerDown={onPointerDown}
 							/>
 						)}
