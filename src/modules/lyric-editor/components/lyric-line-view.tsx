@@ -270,8 +270,9 @@ const SubLineEdit = memo(
 export const LyricLineView: FC<{
 	lineAtom: Atom<LyricLine>;
 	lineIndex: number;
+	advanced: boolean;
 	onPointerDown: (e: React.PointerEvent, lineId: string, index: number) => void;
-}> = memo(({ lineAtom, lineIndex, onPointerDown }) => {
+}> = memo(({ lineAtom, lineIndex, advanced, onPointerDown }) => {
 	const { t } = useTranslation();
 	const line = useAtomValue(lineAtom);
 	const lineSelectedAtom = useMemo(() => {
@@ -606,6 +607,7 @@ export const LyricLineView: FC<{
 														wordIndex={wi}
 														line={line}
 														lineIndex={lineIndex}
+														advanced={advanced}
 													/>
 													{toolMode === ToolMode.Edit &&
 														showWordRomanizationInput && (

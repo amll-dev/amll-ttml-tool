@@ -41,8 +41,6 @@ import {
 	displayRomanizationInSyncAtom,
 	highlightActiveWordAtom,
 	highlightErrorsAtom,
-	LayoutMode,
-	layoutModeAtom,
 	showTimestampsAtom,
 } from "$/modules/settings/states/index.ts";
 import { visualizeTimestampUpdateAtom } from "$/modules/settings/states/sync.ts";
@@ -977,17 +975,17 @@ export const LyricWordView: FC<{
 	wordIndex: number;
 	line: LyricLine;
 	lineIndex: number;
-}> = memo(({ wordAtom, wordIndex, line, lineIndex }) => {
+	advanced: boolean;
+}> = memo(({ wordAtom, wordIndex, line, lineIndex, advanced }) => {
 	const word = useAtomValue(wordAtom);
 	const toolMode = useAtomValue(toolModeAtom);
-	const layoutMode = useAtomValue(layoutModeAtom);
 
 	const isWordBlank = useWordBlank(word.word);
 	const hasRuby = word.ruby && word.ruby.length > 0;
 
 	return (
 		<div>
-			{toolMode === ToolMode.Edit && layoutMode === LayoutMode.Simple && (
+			{toolMode === ToolMode.Edit && !advanced && (
 				<LyricWorldViewEdit
 					wordAtom={wordAtom}
 					line={line}
@@ -995,7 +993,7 @@ export const LyricWordView: FC<{
 					wordIndex={wordIndex}
 				/>
 			)}
-			{toolMode === ToolMode.Edit && layoutMode === LayoutMode.Advance && (
+			{toolMode === ToolMode.Edit && advanced && (
 				<LyricWordViewEditAdvance
 					wordAtom={wordAtom}
 					line={line}
