@@ -1,8 +1,8 @@
+import { isPunctuationOnly } from "$/modules/segmentation/utils/Transliteration/TransliterationUtils";
 import {
 	TranslationOutputMode,
 	translationOutputModeAtom,
 } from "$/modules/settings/states";
-import { isPunctuationOnly } from "$/modules/segmentation/utils/Transliteration/TransliterationUtils";
 import { globalStore } from "$/states/store.ts";
 import type {
 	LyricLine as AppLyricLine,

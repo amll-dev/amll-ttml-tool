@@ -29,6 +29,7 @@ import {
 } from "$/states/main.ts";
 import type { LyricWord } from "$/types/ttml.ts";
 import styles from "../components/index.module.css";
+import { handleTabNavigation } from "../utils/tab-navigation.ts";
 
 const AutoSizeTextField = ({
 	value,
@@ -67,11 +68,13 @@ export const RubyEditor = ({
 	forceShow,
 	showIcon,
 	className,
+	tabGroup = "word-body",
 }: {
 	wordAtom: Atom<LyricWord>;
 	forceShow?: boolean;
 	showIcon?: boolean;
 	className?: string;
+	tabGroup?: string;
 }) => {
 	const word = useAtomValue(wordAtom);
 	const editLyricLines = useSetImmerAtom(lyricLinesAtom);
@@ -281,13 +284,16 @@ export const RubyEditor = ({
 			</Dialog.Root>
 			<span className={classNames(styles.rubyEditor, className)}>
 				{showIcon && (
-					<IconButton size="1" variant="soft" onClick={applyRubyToAllSameWords}>
+					<IconButton tabIndex={-1} size="1" variant="soft" onClick={applyRubyToAllSameWords}>
 						<TranslateRegular />
 					</IconButton>
 				)}
 				{rubyWords.map((rubyWord, index) => (
 					<AutoSizeTextField
+						// biome-ignore lint/suspicious/noArrayIndexKey: ruby segments are ordered editor fields
 						key={`${word.id}-ruby-${index}`}
+						data-tab-group={tabGroup}
+						data-tab-key={`${word.id}-ruby-${index}`}
 						size="1"
 						inputRef={(el) => {
 							inputRefs.current[index] = el;
@@ -295,6 +301,11 @@ export const RubyEditor = ({
 						value={rubyWord.word}
 						onChange={(evt) => updateRubyWord(index, evt.currentTarget.value)}
 						onKeyDown={(evt) => {
+							if (evt.key === "Tab") {
+								evt.stopPropagation();
+								handleTabNavigation(evt, tabGroup);
+								return;
+							}
 							if (evt.key !== "Backspace") return;
 							const selectionStart = evt.currentTarget.selectionStart ?? 0;
 							const selectionEnd = evt.currentTarget.selectionEnd ?? 0;
@@ -315,7 +326,7 @@ export const RubyEditor = ({
 						}}
 					/>
 				))}
-				<IconButton size="1" variant="soft" onClick={addRubyWord}>
+				<IconButton tabIndex={-1} size="1" variant="soft" onClick={addRubyWord}>
 					<Add20Regular />
 				</IconButton>
 			</span>

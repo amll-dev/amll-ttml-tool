@@ -62,6 +62,7 @@ import {
 } from "$/states/main.ts";
 import { type LyricLine, newLyricLine, newLyricWord } from "$/types/ttml.ts";
 import { msToTimestamp } from "$/utils/timestamp.ts";
+import { handleTabNavigation } from "../utils/tab-navigation.ts";
 import styles from "./index.module.css";
 import LyricWordView from "./lyric-word-view.tsx";
 import { RomanWordView } from "./roman-word-view.tsx";
@@ -231,12 +232,21 @@ const SubLineEdit = memo(
 
 						<TextField.Root
 							className={styles.autoSizeInputField}
+							data-tab-group={type === "translatedLyric" ? "line-translated" : "line-roman"}
+							data-tab-key={line.id}
 							autoFocus
 							size="1"
 							value={inputValue}
 							onChange={(evt) => setInputValue(evt.currentTarget.value)}
 							onBlur={onEnter}
 							onKeyDown={(evt) => {
+								if (evt.key === "Tab") {
+									handleTabNavigation(
+										evt,
+										type === "translatedLyric" ? "line-translated" : "line-roman",
+									);
+									return;
+								}
 								if (evt.key === "Enter") onEnter(evt);
 							}}
 						/>
@@ -246,6 +256,15 @@ const SubLineEdit = memo(
 						size="2"
 						color="gray"
 						variant="ghost"
+						data-tab-group={type === "translatedLyric" ? "line-translated" : "line-roman"}
+						data-tab-key={line.id}
+						data-tab-activate="click"
+						onKeyDown={(evt) =>
+							handleTabNavigation(
+								evt,
+								type === "translatedLyric" ? "line-translated" : "line-roman",
+							)
+						}
 						onPointerDown={(e) => e.stopPropagation()}
 						onClick={(evt) => {
 							evt.stopPropagation();

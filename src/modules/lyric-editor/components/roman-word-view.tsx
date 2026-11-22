@@ -11,6 +11,7 @@ import {
 } from "react";
 import { lyricLinesAtom } from "$/states/main";
 import type { LyricWord } from "$/types/ttml";
+import { handleTabNavigation } from "../utils/tab-navigation.ts";
 import styles from "./roman-word-view.module.css";
 
 interface RomanWordViewProps {
@@ -69,14 +70,15 @@ export const RomanWordView = ({
 		const value = e.currentTarget.value;
 		switch (e.key) {
 			case "Enter":
-			case "Tab":
 				e.preventDefault();
 				saveAndStopEditing(value);
-				setEditingIndex(wordIndex + 1);
 				break;
 			case "Escape":
 				e.preventDefault();
 				setEditingIndex(null);
+				break;
+			case "Tab":
+				handleTabNavigation(e, "word-roman");
 				break;
 			case "Backspace":
 				if (value === "") {
@@ -99,6 +101,8 @@ export const RomanWordView = ({
 					styles.romanWordView,
 					word.romanWarning && styles.warning,
 				)}
+				data-tab-group="word-roman"
+				data-tab-key={word.id}
 				value={inputValue}
 				onChange={(e) => setInputValue(e.currentTarget.value)}
 				onBlur={(e) => saveAndStopEditing(e.currentTarget.value)}
@@ -117,6 +121,10 @@ export const RomanWordView = ({
 				!word.romanWord && styles.placeholder,
 				word.romanWarning && styles.warning,
 			)}
+			data-tab-group="word-roman"
+			data-tab-key={word.id}
+			data-tab-activate="click"
+			onKeyDown={(e) => handleTabNavigation(e, "word-roman")}
 			onClick={(e) => {
 				e.stopPropagation();
 				setEditingIndex(wordIndex);
